@@ -6,9 +6,18 @@ interface HeaderProps {
   toggleMenu: () => void;
   lang: Language;
   setLang: (lang: Language) => void;
+  onOpenAuth: () => void;
+  userEmail?: string;
 }
 
-export default function Header({ isMenuOpen, toggleMenu, lang, setLang }: HeaderProps) {
+export default function Header({
+  isMenuOpen,
+  toggleMenu,
+  lang,
+  setLang,
+  onOpenAuth,
+  userEmail,
+}: HeaderProps) {
   return (
     <header className="sticky top-0 z-40 bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between shadow-sm">
       <button
@@ -57,12 +66,20 @@ export default function Header({ isMenuOpen, toggleMenu, lang, setLang }: Header
         </div>
 
         <button
-          className="w-9 h-9 rounded-full bg-slate-300 border-2 border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-400 transition"
+          onClick={onOpenAuth}
+          className="w-9 h-9 rounded-full bg-slate-100 hover:bg-pink-50 border-2 border-slate-200 hover:border-pink-300 flex items-center justify-center text-slate-600 hover:text-[#FF008A] transition"
           aria-label="User Profile"
+          title={userEmail ? `Akun: ${userEmail}` : 'Login / Register'}
         >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-          </svg>
+          {userEmail ? (
+            <span className="text-xs font-bold uppercase text-[#FF008A]">
+              {userEmail.substring(0, 2)}
+            </span>
+          ) : (
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+          )}
         </button>
       </div>
     </header>

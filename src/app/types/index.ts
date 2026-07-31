@@ -1,21 +1,7 @@
 export type Language = 'id' | 'en';
 
 export interface Translations {
-  beranda: string;
-  peta: string;
-  kontak: string;
   lapor: string;
-  komunitas: string;
-  heroTag: string;
-  heroTitleLine1: string;
-  heroTitleLine2: string;
-  heroDesc: string;
-  feature1Title: string;
-  feature1Desc: string;
-  feature2Title: string;
-  feature2Desc: string;
-  feature3Title: string;
-  feature3Desc: string;
   emergencyBtn: string;
   modalTitle: string;
   modalSub: string;
@@ -31,25 +17,21 @@ export interface Translations {
   submitBtn: string;
   successMsg: string;
   cancelBtn: string;
+  login: string;
+  register: string;
+  emailLabel: string;
+  passwordLabel: string;
+  nameLabel: string;
+  confirmPasswordLabel: string;
+  loginSuccess: string;
+  registerSuccess: string;
+  noAccount: string;
+  hasAccount: string;
 }
 
 export const content: Record<Language, Translations> = {
   id: {
-    beranda: 'Beranda',
-    peta: 'Peta Aman',
-    kontak: 'Kontak Darurat',
     lapor: 'Laporan Anonim',
-    komunitas: 'Komunitas & Edukasi',
-    heroTag: 'Perlindungan Perempuan Terpadu',
-    heroTitleLine1: 'Ruang Aman untuk',
-    heroTitleLine2: 'Setiap Langkahmu',
-    heroDesc: 'SafeHer memberikan akses cepat ke bantuan darurat, pemantauan lokasi real-time, dan jaringan dukungan aman.',
-    feature1Title: 'Peta Paling Aman',
-    feature1Desc: 'Lacak rute aman dan terhindar dari area rawan.',
-    feature2Title: 'Respon Cepat',
-    feature2Desc: 'Terhubung langsung ke pihak berwenang & wali.',
-    feature3Title: 'Laporan Anonim',
-    feature3Desc: 'Laporkan insiden secara aman tanpa identitas.',
     emergencyBtn: 'TOMBOL EMERGENCY',
     modalTitle: 'Buat Laporan Anonim',
     modalSub: 'Identitas dan privasimu dijamin 100% aman dan tidak akan dilacak.',
@@ -65,23 +47,19 @@ export const content: Record<Language, Translations> = {
     submitBtn: 'Kirim Laporan Rahasia',
     successMsg: 'Laporan Anonim Berhasil Terkirim!',
     cancelBtn: 'Batal',
+    login: 'Masuk',
+    register: 'Daftar',
+    emailLabel: 'Alamat Email',
+    passwordLabel: 'Kata Sandi',
+    nameLabel: 'Nama Lengkap',
+    confirmPasswordLabel: 'Konfirmasi Kata Sandi',
+    loginSuccess: 'Berhasil Masuk!',
+    registerSuccess: 'Akun Berhasil Dibuat!',
+    noAccount: 'Belum punya akun?',
+    hasAccount: 'Sudah punya akun?',
   },
   en: {
-    beranda: 'Home',
-    peta: 'Safe Map',
-    kontak: 'Emergency Contacts',
     lapor: 'Anonymous Report',
-    komunitas: 'Community & Education',
-    heroTag: 'Integrated Women Safety',
-    heroTitleLine1: 'A Safe Space for',
-    heroTitleLine2: 'Your Every Step',
-    heroDesc: 'SafeHer provides rapid emergency access, real-time location monitoring, and a trusted support network.',
-    feature1Title: 'Safe Map Routing',
-    feature1Desc: 'Track safe routes and avoid high-risk areas.',
-    feature2Title: 'Rapid Response',
-    feature2Desc: 'Directly connect to authorities and trusted contacts.',
-    feature3Title: 'Anonymous Report',
-    feature3Desc: 'Report incidents safely without revealing identity.',
     emergencyBtn: 'EMERGENCY BUTTON',
     modalTitle: 'Submit Anonymous Report',
     modalSub: 'Your identity and privacy are 100% secured and untracked.',
@@ -97,5 +75,15 @@ export const content: Record<Language, Translations> = {
     submitBtn: 'Submit Secret Report',
     successMsg: 'Anonymous Report Submitted Successfully!',
     cancelBtn: 'Cancel',
+    login: 'Login',
+    register: 'Register',
+    emailLabel: 'Email Address',
+    passwordLabel: 'Password',
+    nameLabel: 'Full Name',
+    confirmPasswordLabel: 'Confirm Password',
+    loginSuccess: 'Login Successful!',
+    registerSuccess: 'Account Created Successfully!',
+    noAccount: "Don't have an account?",
+    hasAccount: 'Already have an account?',
   },
 };
