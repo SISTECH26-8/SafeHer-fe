@@ -64,65 +64,47 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="w-full min-h-full flex flex-col md:flex-row animate-in fade-in duration-700 bg-neutral-50/50">
+    <div className="min-h-screen w-full bg-white flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
       
-      {/* Left Side: Branding (Desktop Only) */}
-      <div className="hidden md:flex md:w-1/2 lg:w-[55%] bg-gradient-to-br from-sistech-pink via-[#ff4d88] to-sistech-purple p-12 lg:p-20 flex-col justify-between items-start text-white relative overflow-hidden">
-        
-        {/* Advanced Decorative Elements */}
-        <div className="absolute top-0 right-0 w-[40vw] h-[40vw] bg-white/10 rounded-full blur-[120px] pointer-events-none translate-x-1/3 -translate-y-1/3"></div>
-        <div className="absolute bottom-0 left-0 w-[50vw] h-[50vw] bg-sistech-purple/30 rounded-full blur-[140px] pointer-events-none -translate-x-1/4 translate-y-1/4"></div>
-        <div className="absolute top-1/2 left-1/4 w-32 h-32 bg-white/20 rounded-full blur-[60px] pointer-events-none mix-blend-overlay"></div>
+      {/* Subtle aesthetic background pattern */}
+      <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] opacity-30 pointer-events-none"></div>
 
-        <div className="relative z-10 w-full max-w-xl mt-10">
-          <div className="w-16 h-16 bg-white/20 backdrop-blur-xl rounded-2xl flex items-center justify-center mb-10 border border-white/40 shadow-2xl shadow-black/10 hover:scale-105 transition-transform duration-500">
-            <ShieldCheck className="w-8 h-8 text-white" />
-          </div>
-          <h1 className="text-4xl lg:text-6xl font-black tracking-tighter mb-6 leading-[1.1] drop-shadow-sm">
-            Your safety is our <br className="hidden lg:block" />
-            <span className="text-white/90">top priority.</span>
-          </h1>
-          <p className="text-white/80 text-lg lg:text-xl leading-relaxed font-medium max-w-md drop-shadow-sm">
-            Join SafeHer today to get rapid emergency access, real-time location monitoring, and a trusted support network wherever you go.
-          </p>
+      <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10 flex flex-col items-center animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className="w-14 h-14 bg-sistech-pink/5 rounded-2xl flex items-center justify-center mb-6 border border-sistech-pink/10 shadow-sm">
+          <ShieldCheck className="w-7 h-7 text-sistech-pink" />
         </div>
-        
-        <div className="relative z-10 flex items-center space-x-2 text-white/70 text-sm font-semibold">
-          <span>© {new Date().getFullYear()} SafeHer.</span>
-          <span className="w-1 h-1 rounded-full bg-white/50"></span>
-          <span>All rights reserved.</span>
-        </div>
+        <h2 className="mt-2 text-center text-[28px] font-bold tracking-tight text-neutral-900">
+          Create your account
+        </h2>
+        <p className="mt-2 text-center text-sm text-neutral-500">
+          Join SafeHer for trusted support and monitoring.
+        </p>
       </div>
 
-      {/* Right Side: Form Area (Mobile + Desktop) */}
-      <div className="w-full md:w-1/2 lg:w-[45%] flex flex-col justify-center px-4 py-12 md:px-12 lg:px-16 xl:px-24 relative z-10">
-        
-        <div className="w-full max-w-[420px] mx-auto bg-white/80 backdrop-blur-2xl p-8 md:p-10 rounded-[2.5rem] shadow-[0_8px_40px_rgb(0,0,0,0.04)] border border-white">
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-150 fill-mode-both">
+        <div className="bg-white py-10 px-4 sm:px-10 border border-neutral-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] sm:rounded-[2rem]">
           
-          <div className="text-left mb-10">
-            <h2 className="text-3xl font-black text-neutral-900 tracking-tight">Register</h2>
-            <p className="text-neutral-500 mt-2 text-sm font-medium">Create a new account to get started.</p>
-          </div>
-
           {errorMsg && (
-            <div className="mb-8 p-4 rounded-2xl bg-red-50 border border-red-100 flex items-start space-x-3 text-red-600 text-sm animate-in fade-in slide-in-from-top-2">
+            <div className="mb-6 p-4 rounded-xl bg-red-50/50 border border-red-100 flex items-start space-x-3 text-red-600 text-sm">
               <AlertCircle className="w-5 h-5 shrink-0" />
-              <span className="font-semibold leading-relaxed">{errorMsg}</span>
+              <span className="font-medium">{errorMsg}</span>
             </div>
           )}
 
           {successMsg && (
-            <div className="mb-8 p-4 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-start space-x-3 text-emerald-600 text-sm animate-in fade-in slide-in-from-top-2">
+            <div className="mb-6 p-4 rounded-xl bg-emerald-50/50 border border-emerald-100 flex items-start space-x-3 text-emerald-600 text-sm">
               <ShieldCheck className="w-5 h-5 shrink-0" />
-              <span className="font-semibold leading-relaxed">{successMsg}</span>
+              <span className="font-medium">{successMsg}</span>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <label className="text-[11px] font-bold text-neutral-500 uppercase tracking-widest ml-1">Full Name</label>
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label className="block text-xs font-semibold text-neutral-500 uppercase tracking-widest mb-2">
+                Full Name
+              </label>
               <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                   <User className="h-5 w-5 text-neutral-400 group-focus-within:text-sistech-pink transition-colors" />
                 </div>
                 <input
@@ -131,16 +113,18 @@ export default function RegisterPage() {
                   value={formData.full_name}
                   onChange={handleChange}
                   required
-                  className="block w-full pl-12 pr-4 py-4 border-2 border-transparent bg-neutral-100/50 rounded-2xl text-neutral-900 placeholder-neutral-400 focus:outline-none focus:bg-white focus:border-sistech-pink/30 focus:ring-4 focus:ring-sistech-pink/10 transition-all font-semibold hover:bg-neutral-100"
+                  className="block w-full pl-11 pr-3 py-3 border border-neutral-200 rounded-xl bg-white text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-sistech-pink/20 focus:border-sistech-pink transition-all sm:text-sm shadow-sm"
                   placeholder="Jane Doe"
                 />
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-[11px] font-bold text-neutral-500 uppercase tracking-widest ml-1">Email Address</label>
+            <div>
+              <label className="block text-xs font-semibold text-neutral-500 uppercase tracking-widest mb-2">
+                Email Address
+              </label>
               <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                   <Mail className="h-5 w-5 text-neutral-400 group-focus-within:text-sistech-pink transition-colors" />
                 </div>
                 <input
@@ -149,16 +133,18 @@ export default function RegisterPage() {
                   value={formData.email}
                   onChange={handleChange}
                   required
-                  className="block w-full pl-12 pr-4 py-4 border-2 border-transparent bg-neutral-100/50 rounded-2xl text-neutral-900 placeholder-neutral-400 focus:outline-none focus:bg-white focus:border-sistech-pink/30 focus:ring-4 focus:ring-sistech-pink/10 transition-all font-semibold hover:bg-neutral-100"
+                  className="block w-full pl-11 pr-3 py-3 border border-neutral-200 rounded-xl bg-white text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-sistech-pink/20 focus:border-sistech-pink transition-all sm:text-sm shadow-sm"
                   placeholder="jane@example.com"
                 />
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-[11px] font-bold text-neutral-500 uppercase tracking-widest ml-1">Phone Number</label>
+            <div>
+              <label className="block text-xs font-semibold text-neutral-500 uppercase tracking-widest mb-2">
+                Phone Number
+              </label>
               <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                   <Phone className="h-5 w-5 text-neutral-400 group-focus-within:text-sistech-pink transition-colors" />
                 </div>
                 <input
@@ -167,16 +153,18 @@ export default function RegisterPage() {
                   value={formData.phone_number}
                   onChange={handleChange}
                   required
-                  className="block w-full pl-12 pr-4 py-4 border-2 border-transparent bg-neutral-100/50 rounded-2xl text-neutral-900 placeholder-neutral-400 focus:outline-none focus:bg-white focus:border-sistech-pink/30 focus:ring-4 focus:ring-sistech-pink/10 transition-all font-semibold hover:bg-neutral-100"
+                  className="block w-full pl-11 pr-3 py-3 border border-neutral-200 rounded-xl bg-white text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-sistech-pink/20 focus:border-sistech-pink transition-all sm:text-sm shadow-sm"
                   placeholder="+62 812 3456 7890"
                 />
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-[11px] font-bold text-neutral-500 uppercase tracking-widest ml-1">Password</label>
+            <div>
+              <label className="block text-xs font-semibold text-neutral-500 uppercase tracking-widest mb-2">
+                Password
+              </label>
               <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                   <Lock className="h-5 w-5 text-neutral-400 group-focus-within:text-sistech-pink transition-colors" />
                 </div>
                 <input
@@ -186,36 +174,51 @@ export default function RegisterPage() {
                   onChange={handleChange}
                   required
                   minLength={6}
-                  className="block w-full pl-12 pr-4 py-4 border-2 border-transparent bg-neutral-100/50 rounded-2xl text-neutral-900 placeholder-neutral-400 focus:outline-none focus:bg-white focus:border-sistech-pink/30 focus:ring-4 focus:ring-sistech-pink/10 transition-all font-semibold hover:bg-neutral-100"
+                  className="block w-full pl-11 pr-3 py-3 border border-neutral-200 rounded-xl bg-white text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-sistech-pink/20 focus:border-sistech-pink transition-all sm:text-sm shadow-sm"
                   placeholder="••••••••"
                 />
               </div>
             </div>
 
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full mt-10 py-4 px-4 rounded-2xl shadow-[0_8px_30px_rgb(255,10,120,0.3)] text-sm font-extrabold text-white bg-gradient-to-r from-sistech-pink to-[#ff1a75] hover:scale-[1.02] hover:shadow-[0_8px_40px_rgb(255,10,120,0.4)] focus:outline-none focus:ring-4 focus:ring-sistech-pink/30 active:scale-[0.98] transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  <span>Registering...</span>
-                </>
-              ) : (
-                <>
-                  <span>Create Account</span>
-                  <ArrowRight className="w-5 h-5 ml-1" />
-                </>
-              )}
-            </button>
+            <div className="pt-4">
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full flex justify-center items-center gap-2 py-3.5 px-4 border border-transparent rounded-xl shadow-sm text-sm font-semibold text-white bg-sistech-pink hover:bg-[#e61a6b] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sistech-pink transition-all active:scale-[0.98] disabled:opacity-50"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" /> Registering...
+                  </>
+                ) : (
+                  <>
+                    Create account <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+            </div>
           </form>
-          
-          <div className="mt-10 text-center text-sm text-neutral-500 font-medium">
-            Already have an account?{' '}
-            <Link href="/login" className="text-sistech-pink hover:text-[#ff1a75] font-extrabold transition-colors">
-              Log in instead
-            </Link>
+
+          <div className="mt-8">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-neutral-100" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="bg-white px-4 text-neutral-400 font-medium">
+                  Already have an account?
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <Link
+                href="/login"
+                className="w-full flex justify-center items-center py-3 px-4 border border-neutral-200 rounded-xl shadow-sm bg-white text-sm font-semibold text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-200 transition-all active:scale-[0.98]"
+              >
+                Log in instead
+              </Link>
+            </div>
           </div>
         </div>
       </div>
