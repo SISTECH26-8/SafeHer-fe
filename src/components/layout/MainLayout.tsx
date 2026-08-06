@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Menu, Heart } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import EmergencyButton from '../features/EmergencyButton';
+import { useAuth } from '@/context/AuthContext';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -14,8 +15,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const pathname = usePathname();
   const isAuthPage = pathname === '/register' || pathname === '/login';
 
-  // State untuk menyimpan data user yang login (sementara null jika belum login)
-  const [user, setUser] = useState<{ name: string } | null>(null);
+  const { user, isLoading, logout } = useAuth();
 
   if (isAuthPage) {
     return <div className="min-h-screen w-full bg-white">{children}</div>;
@@ -41,9 +41,11 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
         {/* Right: Auth Buttons */}
         <div className="flex items-center space-x-1 md:space-x-2 ml-auto">
-          {user ? (
+          {isLoading ? (
+            <div className="w-16 h-6 md:w-20 md:h-8 bg-neutral-200 animate-pulse rounded-full"></div>
+          ) : user ? (
             <Link href="/profile" className="px-3 py-1.5 md:px-6 md:py-2 rounded-xl md:rounded-full bg-sistech-pink text-white text-[10px] md:text-sm font-bold shadow-sm shadow-sistech-pink/20 hover:opacity-90 transition-all hover:scale-105">
-              {user.name}
+              {user.full_name || user.name || 'User'}
             </Link>
           ) : (
             <>

@@ -3,20 +3,36 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { User, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { User, Mail, Lock, Eye, EyeOff, Phone } from 'lucide-react';
+import api from '@/lib/api';
 
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+
   const [formData, setFormData] = useState({
-    username: '',
+    full_name: '',
     email: '',
+    phone_number: '',
     password: '',
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle register logic here
-    console.log('Register data:', formData);
+    setErrorMsg('');
+    setLoading(true);
+    try {
+      await api.post('/api/v1/auth/register', formData);
+      // Pindah ke halaman login jika sukses
+      router.push('/login');
+    } catch (err: any) {
+      setErrorMsg(err.response?.data?.detail || 'Gagal mendaftar, silakan coba lagi.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -42,14 +58,20 @@ export default function RegisterPage() {
         {/* Form */}
         <form onSubmit={handleSubmit} className="w-full space-y-4">
           
-          {/* Username Input */}
+          {errorMsg && (
+            <div className="w-full bg-red-100 text-red-600 p-3 rounded-xl text-sm font-semibold mb-2 text-center">
+              {errorMsg}
+            </div>
+          )}
+
+          {/* Full Name Input */}
           <div className="relative flex items-center">
             <User className="absolute left-4 w-5 h-5 text-neutral-400" />
             <input
               type="text"
-              placeholder="Masukkan username"
-              value={formData.username}
-              onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+              placeholder="Masukkan nama lengkap"
+              value={formData.full_name}
+              onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
               className="w-full bg-neutral-100 text-neutral-800 placeholder-neutral-400 pl-12 pr-4 py-3.5 rounded-2xl text-sm outline-none focus:ring-2 focus:ring-sistech-pink/30 transition-all"
               required
             />
@@ -63,6 +85,19 @@ export default function RegisterPage() {
               placeholder="Masukkan email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              className="w-full bg-neutral-100 text-neutral-800 placeholder-neutral-400 pl-12 pr-4 py-3.5 rounded-2xl text-sm outline-none focus:ring-2 focus:ring-sistech-pink/30 transition-all"
+              required
+            />
+          </div>
+
+          {/* Phone Number Input */}
+          <div className="relative flex items-center">
+            <Phone className="absolute left-4 w-5 h-5 text-neutral-400" />
+            <input
+              type="tel"
+              placeholder="Masukkan nomor HP"
+              value={formData.phone_number}
+              onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
               className="w-full bg-neutral-100 text-neutral-800 placeholder-neutral-400 pl-12 pr-4 py-3.5 rounded-2xl text-sm outline-none focus:ring-2 focus:ring-sistech-pink/30 transition-all"
               required
             />
@@ -102,9 +137,10 @@ export default function RegisterPage() {
           {/* Submit Button */}
           <button
             type="submit"
-            className="w-full bg-sistech-pink text-white font-bold py-3.5 rounded-full shadow-md shadow-sistech-pink/20 hover:opacity-90 active:scale-[0.98] transition-all text-base mt-2"
+            disabled={loading}
+            className="w-full bg-sistech-pink text-white font-bold py-3.5 rounded-full shadow-md shadow-sistech-pink/20 hover:opacity-90 active:scale-[0.98] transition-all text-base mt-2 disabled:opacity-50"
           >
-            Daftar
+            {loading ? 'Daftar...' : 'Daftar'}
           </button>
         </form>
 

@@ -3,19 +3,37 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { User, Lock, Eye, EyeOff } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import api from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+  const { login } = useAuth();
+  
   const [formData, setFormData] = useState({
-    username: '',
+    email: '',
     password: '',
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle login logic here
-    console.log('Login data:', formData);
+    setErrorMsg('');
+    setLoading(true);
+    try {
+      const response = await api.post('/api/v1/auth/login', formData);
+      const { token, user } = response.data;
+      login(token, user);
+      router.push('/');
+    } catch (err: any) {
+      setErrorMsg(err.response?.data?.detail || 'Email atau password salah');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -41,14 +59,20 @@ export default function LoginPage() {
         {/* Form */}
         <form onSubmit={handleSubmit} className="w-full space-y-4">
           
-          {/* Username Input */}
+          {errorMsg && (
+            <div className="w-full bg-red-100 text-red-600 p-3 rounded-xl text-sm font-semibold mb-4 text-center">
+              {errorMsg}
+            </div>
+          )}
+
+          {/* Email Input */}
           <div className="relative flex items-center">
-            <User className="absolute left-4 w-5 h-5 text-neutral-400" />
+            <Mail className="absolute left-4 w-5 h-5 text-neutral-400" />
             <input
-              type="text"
-              placeholder="Masukkan username"
-              value={formData.username}
-              onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+              type="email"
+              placeholder="Masukkan email"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               className="w-full bg-neutral-100 text-neutral-800 placeholder-neutral-400 pl-12 pr-4 py-3.5 rounded-2xl text-sm outline-none focus:ring-2 focus:ring-sistech-pink/30 transition-all"
               required
             />
@@ -88,9 +112,10 @@ export default function LoginPage() {
           {/* Submit Button */}
           <button
             type="submit"
-            className="w-full bg-sistech-pink text-white font-bold py-3.5 rounded-full shadow-md shadow-sistech-pink/20 hover:opacity-90 active:scale-[0.98] transition-all text-base mt-2"
+            disabled={loading}
+            className="w-full bg-sistech-pink text-white font-bold py-3.5 rounded-full shadow-md shadow-sistech-pink/20 hover:opacity-90 active:scale-[0.98] transition-all text-base mt-2 disabled:opacity-50"
           >
-            Masuk
+            {loading ? 'Masuk...' : 'Masuk'}
           </button>
         </form>
 
