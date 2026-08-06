@@ -1,113 +1,126 @@
 'use client';
 
 import React, { useState } from 'react';
-import Image from 'next/image';
+import { User, Mail, Lock } from 'lucide-react';
 import Link from 'next/link';
-import { User, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import AuthLogo from '@/components/ui/AuthLogo';
+import Input from '@/components/ui/Input';
+import Button from '@/components/ui/Button';
 
 export default function RegisterPage() {
-  const [showPassword, setShowPassword] = useState(false);
+  const router = useRouter();
   const [formData, setFormData] = useState({
     username: '',
     email: '',
     password: '',
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle register logic here
-    console.log('Register data:', formData);
+    setIsLoading(true);
+    setErrorMsg('');
+
+    try {
+      const response = await fetch('https://safeher-be.onrender.com/api/v1/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          full_name: formData.username, // mapped for API backward compatibility
+          email: formData.email,
+          password: formData.password,
+          phone_number: '00000000000' // dummy value for required field
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        const errorDetail = data.detail 
+          ? (Array.isArray(data.detail) ? data.detail[0].msg : data.detail) 
+          : (data.message || 'Registration failed. Please check your inputs.');
+        throw new Error(errorDetail);
+      }
+
+      // Route to OTP (assuming the flow requires OTP after registration based on design)
+      // Otherwise could route to login. For this demo, let's go to OTP as it's the next screen in the visual flow
+      router.push('/otp'); 
+
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Something went wrong. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center justify-center px-6 py-10 font-sans">
-      <div className="w-full max-w-sm flex flex-col items-center">
+    <div className="min-h-screen w-full bg-white flex flex-col items-center justify-center py-12 px-6 sm:px-8 relative">
+      <div className="w-full max-w-sm flex flex-col items-center animate-in fade-in slide-in-from-bottom-4 duration-700">
         
-        {/* Logo PNG */}
-        <div className="relative w-48 h-48 mb-4">
-          <Image
-            src="/SafeHer.png" 
-            alt="SafeHer Logo"
-            fill
-            className="object-contain"
-            priority
-          />
-        </div>
+        <AuthLogo />
+        
+        <h2 className="mt-2 text-center text-[1.35rem] leading-snug font-bold tracking-tight text-sistech-pink max-w-[220px] mb-10">
+          Kamu ngga sendiri, kami ada disini
+        </h2>
 
-        {/* Heading */}
-        <h1 className="text-2xl font-bold text-sistech-pink text-center mb-8">
-          Kamu ngga sendiri, kami<br />ada disini
-        </h1>
+        {errorMsg && (
+          <div className="mb-4 w-full p-3 rounded-xl bg-red-50 border border-red-100 text-red-600 text-sm font-medium text-center">
+            {errorMsg}
+          </div>
+        )}
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="w-full space-y-4">
-          
-          {/* Username Input */}
-          <div className="relative flex items-center">
-            <User className="absolute left-4 w-5 h-5 text-neutral-400" />
-            <input
-              type="text"
-              placeholder="Masukkan username"
-              value={formData.username}
-              onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-              className="w-full bg-neutral-100 text-neutral-800 placeholder-neutral-400 pl-12 pr-4 py-3.5 rounded-2xl text-sm outline-none focus:ring-2 focus:ring-sistech-pink/30 transition-all"
-              required
-            />
+          <Input
+            icon={<User className="h-5 w-5" />}
+            type="text"
+            name="username"
+            value={formData.username}
+            onChange={handleChange}
+            required
+            placeholder="Masukkan username"
+          />
+
+          <Input
+            icon={<Mail className="h-5 w-5" />}
+            type="email"
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
+            required
+            placeholder="Masukkan email"
+          />
+
+          <Input
+            icon={<Lock className="h-5 w-5" />}
+            type="password"
+            name="password"
+            value={formData.password}
+            onChange={handleChange}
+            required
+            placeholder="Masukkan password"
+          />
+
+          <div className="text-right w-full mt-2 mb-8">
+            <span className="text-sm text-neutral-400">Punya akun? </span>
+            <Link href="/login" className="text-sm text-sistech-pink font-semibold hover:underline">
+              Masuk
+            </Link>
           </div>
 
-          {/* Email Input */}
-          <div className="relative flex items-center">
-            <Mail className="absolute left-4 w-5 h-5 text-neutral-400" />
-            <input
-              type="email"
-              placeholder="Masukkan email"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full bg-neutral-100 text-neutral-800 placeholder-neutral-400 pl-12 pr-4 py-3.5 rounded-2xl text-sm outline-none focus:ring-2 focus:ring-sistech-pink/30 transition-all"
-              required
-            />
+          <div className="px-6">
+            <Button type="submit" isLoading={isLoading}>
+              Daftar
+            </Button>
           </div>
-
-          {/* Password Input */}
-          <div className="relative flex items-center">
-            <Lock className="absolute left-4 w-5 h-5 text-neutral-400" />
-            <input
-              type={showPassword ? 'text' : 'password'}
-              placeholder="Masukkan password"
-              value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              className="w-full bg-neutral-100 text-neutral-800 placeholder-neutral-400 pl-12 pr-12 py-3.5 rounded-2xl text-sm outline-none focus:ring-2 focus:ring-sistech-pink/30 transition-all"
-              required
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 text-sistech-pink hover:opacity-80 transition-opacity"
-              aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
-            >
-              {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-            </button>
-          </div>
-
-          {/* Link ke Login */}
-          <div className="flex justify-end pt-1">
-            <p className="text-xs font-semibold text-neutral-700">
-              Punya akun?{' '}
-              <Link href="/login" className="text-sistech-pink font-bold hover:underline">
-                Masuk
-              </Link>
-            </p>
-          </div>
-
-          {/* Submit Button */}
-          <button
-            type="submit"
-            className="w-full bg-sistech-pink text-white font-bold py-3.5 rounded-full shadow-md shadow-sistech-pink/20 hover:opacity-90 active:scale-[0.98] transition-all text-base mt-2"
-          >
-            Daftar
-          </button>
         </form>
-
       </div>
     </div>
   );
