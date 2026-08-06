@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Check, X, AlertTriangle, Loader2, MapPin } from 'lucide-react';
+import { Check, X, AlertTriangle, Loader2, MapPin, Phone, Store, ChevronRight } from 'lucide-react';
 import api from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 
-type SOSState = 'idle' | 'countdown' | 'fetching' | 'share_modal' | 'success';
+type SOSState = 'idle' | 'countdown' | 'fetching' | 'share_modal' | 'success' | 'action_selection' | 'safe_point_list' | 'safe_point_detail';
 
 export default function EmergencyButton() {
   const { user } = useAuth();
@@ -13,6 +13,9 @@ export default function EmergencyButton() {
   const [sosState, setSosState] = useState<SOSState>('idle');
   const [countdown, setCountdown] = useState(5);
   const [trackingUrl, setTrackingUrl] = useState('https://safeHer.com/G2x22k4NkMwOHE...');
+  const [userLocation, setUserLocation] = useState<{lat: number, lon: number} | null>(null);
+  const [safePoint, setSafePoint] = useState<any>(null);
+  const [isFetchingSafePoint, setIsFetchingSafePoint] = useState(false);
 
   // Handle Countdown
   useEffect(() => {
@@ -52,6 +55,7 @@ export default function EmergencyButton() {
       async (position) => {
         try {
           const { latitude, longitude } = position.coords;
+          setUserLocation({ lat: latitude, lon: longitude });
           const response = await api.post('/api/v1/emergency/sos', {
             current_lat: latitude,
             current_lon: longitude,
@@ -79,10 +83,54 @@ export default function EmergencyButton() {
 
   const handleConfirmShare = () => {
     setSosState('success');
-    // Hide success modal after 3 seconds
+    // Show action selection modal after 2 seconds
     setTimeout(() => {
-      setSosState('idle');
-    }, 3000);
+      setSosState('action_selection');
+    }, 2000);
+  };
+
+  const fetchNearestSafePoint = async () => {
+    setSosState('safe_point_list');
+    setIsFetchingSafePoint(true);
+    
+    try {
+      if (userLocation) {
+        // TODO: Uncomment panggilan API di bawah ini jika backend endpoint sudah tersedia
+        // const response = await api.get('/api/v1/safe-points/nearest', {
+        //   params: { lat: userLocation.lat, lon: userLocation.lon }
+        // });
+        // setSafePoint(response.data);
+        
+        // Simulasi delay jaringan (Mock)
+        await new Promise(resolve => setTimeout(resolve, 800));
+
+        // Karena backend belum memiliki API untuk fitur ini (404),
+        // Kita buat MOCK DINAMIS yang posisinya selalu menyesuaikan lokasi Anda berada saat ini.
+        // Bergeser sekitar 300-500 meter dari lokasi terkini Anda.
+        const dynamicMockSafePoint = {
+          name: "Pos Aman Terdekat (Simulasi)",
+          address: "Menyesuaikan dengan lokasi di sekitar Anda saat ini",
+          features: ["Buka 24 Jam", "Keamanan Terjamin", "CCTV Aktif / Berfungsi", "Terdapat P3K / Toilet"],
+          lat: userLocation.lat + 0.003, // geser sedikit ke utara
+          lon: userLocation.lon + 0.003  // geser sedikit ke timur
+        };
+        
+        setSafePoint(dynamicMockSafePoint);
+      } else {
+        throw new Error("Lokasi belum tersedia");
+      }
+    } catch (error) {
+      console.log("Gagal mengambil lokasi, menggunakan data fallback static.");
+      setSafePoint({
+        name: "Indomaret UI",
+        address: "Jl. Prof. Dr. Soepomo, Depok, Jawa Barat",
+        features: ["Buka 24 Jam"],
+        lat: -6.368,
+        lon: 106.833
+      });
+    } finally {
+      setIsFetchingSafePoint(false);
+    }
   };
 
   return (
@@ -198,6 +246,151 @@ export default function EmergencyButton() {
                 <Check className="w-10 h-10 text-white font-bold" strokeWidth={3} />
               </div>
               <h3 className="text-base font-extrabold text-neutral-900 uppercase tracking-wide text-center">LOKASI MU SUKSES TERKIRIM</h3>
+            </div>
+          )}
+
+          {/* 4. ACTION SELECTION MODAL */}
+          {sosState === 'action_selection' && (
+            <div className="bg-white rounded-[1.5rem] p-6 shadow-2xl flex flex-col items-center animate-in zoom-in-95 duration-200 w-full max-w-[22rem] border border-sistech-pink">
+              
+              <div className="w-16 h-16 text-[#E00000] mb-5 mt-2">
+                <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full">
+                  <path d="M7.86 2h8.28L22 7.86v8.28L16.14 22H7.86L2 16.14V7.86L7.86 2z" />
+                  <path d="M12 7v5" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+                  <circle cx="12" cy="16" r="1.2" fill="white" />
+                </svg>
+              </div>
+              
+              <h3 className="text-[13px] font-extrabold text-[#7A0000] uppercase tracking-wide text-center mb-6 px-1 leading-snug">
+                PILIH TINDAKAN DARURAT CEPAT YANG INGIN KAMU LAKUKAN SEKARANG:
+              </h3>
+              
+              <div className="w-full flex flex-col gap-3 mb-6">
+                {/* Option 1: Panggil Darurat */}
+                <a href="tel:110" className="bg-[#6A5AE0] hover:bg-[#5C4DD0] text-white p-3.5 rounded-xl flex items-center shadow-sm transition-colors group">
+                  <div className="bg-white/20 p-2 rounded-lg mr-3 group-hover:scale-105 transition-transform shrink-0">
+                    <Phone className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <h4 className="font-bold text-sm">Panggil Darurat 110</h4>
+                    <p className="text-[11px] text-white/80 mt-0.5">Hubungi polisi langsung</p>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-white/60 group-hover:text-white transition-colors" />
+                </a>
+                
+                {/* Option 2: Safe Point */}
+                <button 
+                  onClick={fetchNearestSafePoint}
+                  className="bg-[#6A5AE0] hover:bg-[#5C4DD0] text-white p-3.5 rounded-xl flex items-center shadow-sm transition-colors group"
+                >
+                  <div className="bg-white/20 p-2 rounded-lg mr-3 group-hover:scale-105 transition-transform shrink-0">
+                    <Store className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <h4 className="font-bold text-sm">Informasi Safe Point Terdekat</h4>
+                    <p className="text-[11px] text-white/80 mt-0.5">Rute pos polisi / toko aman terdekat</p>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-white/60 group-hover:text-white transition-colors" />
+                </button>
+              </div>
+              
+              <button 
+                onClick={handleCancelSOS}
+                className="w-full bg-sistech-pink text-white font-bold py-3.5 rounded-xl hover:bg-pink-600 hover:-translate-y-0.5 transition-all active:scale-95"
+              >
+                BATALKAN SOS
+              </button>
+            </div>
+          )}
+
+          {/* 5. SAFE POINT LIST MODAL (Unexpanded) */}
+          {sosState === 'safe_point_list' && (
+            <div className="bg-white rounded-[1.5rem] p-6 shadow-2xl flex flex-col items-center animate-in zoom-in-95 duration-200 w-full max-w-[22rem] border border-sistech-pink">
+              
+              <h3 className="text-[13px] font-extrabold text-[#7A0000] uppercase tracking-wide text-center mb-4 px-1 leading-snug">
+                INFORMASI SAFE POINT TERDEKAT
+              </h3>
+              
+              {isFetchingSafePoint ? (
+                <div className="w-full flex flex-col items-center justify-center py-8 mb-6">
+                  <Loader2 className="w-8 h-8 text-sistech-pink animate-spin mb-4" />
+                  <p className="text-xs font-bold text-neutral-600 text-center">Mencari Safe Point terdekat...</p>
+                </div>
+              ) : safePoint && (
+                <div className="w-full flex flex-col gap-3 mb-6">
+                  <button 
+                    onClick={() => setSosState('safe_point_detail')}
+                    className="bg-[#6A5AE0] hover:bg-[#5C4DD0] text-white p-3.5 rounded-xl flex items-center shadow-sm transition-colors group text-left"
+                  >
+                    <div className="bg-white p-1.5 rounded-lg mr-3 shrink-0">
+                      <Store className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-bold text-sm">{safePoint.name}</h4>
+                      <p className="text-[10px] text-white/80 mt-0.5 line-clamp-1">{safePoint.address}</p>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-white/60 group-hover:text-white transition-colors shrink-0" />
+                  </button>
+                </div>
+              )}
+              
+              <button 
+                onClick={handleCancelSOS}
+                className="w-full bg-sistech-pink text-white font-bold py-3.5 rounded-xl hover:bg-pink-600 hover:-translate-y-0.5 transition-all active:scale-95"
+              >
+                BATALKAN SOS
+              </button>
+            </div>
+          )}
+
+          {/* 6. SAFE POINT DETAIL MODAL (Expanded) */}
+          {sosState === 'safe_point_detail' && safePoint && (
+            <div className="bg-white rounded-[1.5rem] p-6 shadow-2xl flex flex-col items-center animate-in zoom-in-95 duration-200 w-full max-w-[22rem] border border-sistech-pink">
+              
+              <div className="w-full border border-neutral-200 rounded-xl overflow-hidden mb-6 shadow-sm">
+                {/* Header */}
+                <div className="p-3.5 bg-white flex items-center border-b border-neutral-100">
+                  <div className="bg-white border border-neutral-200 p-1.5 rounded-lg mr-3 shrink-0">
+                    <Store className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <h4 className="font-bold text-sm text-neutral-900">{safePoint.name}</h4>
+                    <p className="text-[10px] text-neutral-500 leading-tight mt-0.5">{safePoint.address}</p>
+                  </div>
+                </div>
+                
+                {/* Body Details */}
+                <div className="p-4 bg-pink-50/50">
+                  <p className="text-[11px] font-bold text-[#FF4297] mb-2.5">Informasi Safe Point</p>
+                  <div className="grid grid-cols-2 gap-y-2 gap-x-1 text-[10px] text-neutral-600 mb-5">
+                    {safePoint.features && safePoint.features.map((feature: string, idx: number) => (
+                      <div key={idx} className="flex items-center gap-1.5">
+                        <div className="w-1.5 h-1.5 bg-green-500 rounded-full shrink-0" />
+                        <span className="line-clamp-2">{feature}</span>
+                      </div>
+                    ))}
+                    {(!safePoint.features || safePoint.features.length === 0) && (
+                      <div className="col-span-2 text-neutral-500 italic">Informasi fitur tidak tersedia</div>
+                    )}
+                  </div>
+                  
+                  <button 
+                    onClick={() => {
+                      window.location.href = `/route?destLat=${safePoint.lat || ''}&destLon=${safePoint.lon || ''}`;
+                    }}
+                    className="w-full bg-[#AC42A0] text-white font-bold py-2.5 rounded-lg shadow-sm hover:bg-[#8F3584] transition-colors text-xs active:scale-95"
+                  >
+                    PILIH RUTE KE SAFE POINT
+                  </button>
+                </div>
+              </div>
+              
+              <button 
+                onClick={handleCancelSOS}
+                className="w-full bg-sistech-pink text-white font-bold py-3.5 rounded-xl hover:bg-pink-600 hover:-translate-y-0.5 transition-all active:scale-95"
+              >
+                BATALKAN SOS
+              </button>
             </div>
           )}
 

@@ -17,6 +17,37 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
   const { user, isLoading, logout } = useAuth();
 
+  const getDisplayName = () => {
+    if (!user) return 'User';
+    
+    // Fungsi rekursif untuk mencari properti nama di dalam objek bersarang (nested object)
+    const findName = (obj: any): string | null => {
+      if (!obj) return null;
+      if (typeof obj === 'string') return obj;
+      if (typeof obj !== 'object') return null;
+      
+      const nameMatch = obj.full_name || obj.fullName || obj.name || obj.username || obj.first_name;
+      if (nameMatch) return nameMatch;
+      
+      if (obj.email) return obj.email.split('@')[0];
+
+      for (const key in obj) {
+        if (typeof obj[key] === 'object') {
+          const nested = findName(obj[key]);
+          if (nested) return nested;
+        }
+      }
+      return null;
+    };
+
+    const extractedName = findName(user);
+    if (extractedName && extractedName !== 'User') return extractedName;
+
+    return null;
+  };
+
+  const displayName = getDisplayName();
+
   if (isAuthPage) {
     return <div className="min-h-screen w-full bg-white">{children}</div>;
   }
@@ -29,7 +60,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
         
         {/* Left: Logo */}
         <Link href="/" className="flex items-center space-x-1 md:space-x-2">
-          <img src="/SafeHer.png" alt="SafeHer Logo" className="h-6 md:h-10 w-auto object-contain" />
+          <img src="/SafeHer.png?v=2" alt="SafeHer Logo" className="h-6 md:h-10 w-auto object-contain" />
         </Link>
 
         {/* Center: Navigation Links */}
@@ -43,9 +74,9 @@ export default function MainLayout({ children }: MainLayoutProps) {
         <div className="flex items-center space-x-1 md:space-x-2 ml-auto">
           {isLoading ? (
             <div className="w-16 h-6 md:w-20 md:h-8 bg-neutral-200 animate-pulse rounded-full"></div>
-          ) : user ? (
+          ) : displayName ? (
             <Link href="/profile" className="px-3 py-1.5 md:px-6 md:py-2 rounded-xl md:rounded-full bg-sistech-pink text-white text-[10px] md:text-sm font-bold shadow-sm shadow-sistech-pink/20 hover:opacity-90 transition-all hover:scale-105">
-              {user.full_name || user.name || 'User'}
+              {displayName}
             </Link>
           ) : (
             <>

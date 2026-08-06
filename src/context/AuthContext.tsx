@@ -7,8 +7,11 @@ import api from '@/lib/api';
 interface User {
   user_id?: string;
   full_name?: string;
+  fullName?: string;
   name?: string; // fallback
+  username?: string;
   email?: string;
+  [key: string]: any;
 }
 
 interface AuthContextType {
@@ -36,7 +39,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           // Verify token or get user info
           const response = await api.get('/api/v1/auth/me');
           // Adjust based on the actual response structure of /auth/me
-          setUser(response.data.user || response.data || { name: 'User' });
+          setUser(response.data.user || response.data);
         } catch (error) {
           console.error("Failed to authenticate user", error);
           Cookies.remove('token');
@@ -58,7 +61,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } else {
       // Refresh user data if missing
       api.get('/api/v1/auth/me').then((res) => {
-        setUser(res.data.user || res.data || { name: 'User' });
+        setUser(res.data.user || res.data);
       }).catch(console.error);
     }
   };

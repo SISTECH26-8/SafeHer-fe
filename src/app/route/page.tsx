@@ -1,10 +1,16 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { MapPin, Search, GraduationCap, Coffee, ShoppingBag, X, ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import api from '@/lib/api';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import dynamic from 'next/dynamic';
+
+const TrackingMap = dynamic(() => import('@/components/features/TrackingMap'), {
+  ssr: false,
+  loading: () => <div className="w-full h-screen fixed inset-0 flex flex-col items-center justify-center bg-neutral-900 z-[9999]"><Loader2 className="w-10 h-10 animate-spin text-sistech-pink mb-4" /><p className="text-white font-bold">Memuat Peta Tracking...</p></div>
+});
 
 interface Location {
   id: string;
@@ -13,8 +19,12 @@ interface Location {
   coordinates: [number, number]; // [lon, lat]
 }
 
-export default function RoutePage() {
+function RoutePageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  
+  const queryDestLat = searchParams.get('destLat');
+  const queryDestLon = searchParams.get('destLon');
   
   const [startLoc, setStartLoc] = useState('Mendeteksi lokasi...');
   const [startCoords, setStartCoords] = useState<[number, number] | null>(null);
@@ -34,7 +44,7 @@ export default function RoutePage() {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           const { latitude, longitude } = position.coords;
-          setStartCoords([longitude, latitude]);
+          setStartCoords([latitude, longitude]);
           
           try {
             const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`, {
@@ -158,6 +168,19 @@ export default function RoutePage() {
   };
 
   const isRouteReady = startCoords && endLoc && !isLocating;
+
+  // Jika URL memiliki destLat dan destLon, serta koordinat awal sudah ditemukan,
+  // maka kita tampilkan peta Tracking. Jika belum ditemukan koordinat, bisa tampilkan loader atau map default.
+  if (queryDestLat && queryDestLon) {
+    // Kita asumsikan startCoords sudah didapat dari geolocation
+    // Jika belum didapatkan tapi ada lokasi awal fallback (atau lokasi kasar), kita tampilkan map
+    const destCoords: [number, number] = [parseFloat(queryDestLat), parseFloat(queryDestLon)];
+    
+    // Fallback jika belum dapat lokasi GPS
+    const defaultStartCoords: [number, number] = startCoords || [destCoords[0] - 0.003, destCoords[1] - 0.003];
+    
+    return <TrackingMap startCoords={defaultStartCoords} destCoords={destCoords} />;
+  }
 
   return (
     <div className="w-full max-w-6xl mx-auto px-4 py-8 md:py-16 bg-white min-h-[calc(100vh-200px)] flex flex-col font-sans mb-10 relative">
@@ -382,5 +405,13 @@ export default function RoutePage() {
       </div>
 
     </div>
+  );
+}
+
+export default function RoutePage() {
+  return (
+    <Suspense fallback={<div className="w-full h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-sistech-pink" /></div>}>
+      <RoutePageContent />
+    </Suspense>
   );
 }
