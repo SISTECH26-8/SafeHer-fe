@@ -3,16 +3,21 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, Search, GraduationCap, Coffee, ShoppingBag, X, ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import api from '@/lib/api';
+import { useRouter } from 'next/navigation';
 
 interface Location {
   id: string;
   name: string;
   address: string;
-  coordinates: [number, number];
+  coordinates: [number, number]; // [lon, lat]
 }
 
 export default function RoutePage() {
+  const router = useRouter();
+  
   const [startLoc, setStartLoc] = useState('Mendeteksi lokasi...');
+  const [startCoords, setStartCoords] = useState<[number, number] | null>(null);
   const [isLocating, setIsLocating] = useState(true);
   
   const [endLoc, setEndLoc] = useState<Location | null>(null);
@@ -21,29 +26,30 @@ export default function RoutePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Location[]>([]);
   const [isSearchingApi, setIsSearchingApi] = useState(false);
+  const [isRouting, setIsRouting] = useState(false);
 
-  // Get current location on mount
+  // Get current location on mount (Nominatim API)
   useEffect(() => {
     if (typeof window !== 'undefined' && 'geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           const { latitude, longitude } = position.coords;
+          setStartCoords([longitude, latitude]);
+          
           try {
-            const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || '';
-            if (!token) {
-              setStartLoc(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
-              setIsLocating(false);
-              return;
-            }
-            const res = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${longitude},${latitude}.json?access_token=${token}`);
+            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`, {
+              headers: { 'User-Agent': 'SafeHerApp/1.0' }
+            });
             const data = await res.json();
-            if (data && data.features && data.features.length > 0) {
-              setStartLoc(data.features[0].place_name);
+            if (data && data.display_name) {
+              // Extract a shorter name if possible
+              const shortName = data.name || data.display_name.split(',')[0];
+              setStartLoc(shortName);
             } else {
               setStartLoc(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
             }
           } catch (error) {
-            console.error('Mapbox API error:', error);
+            console.error('OSM Geocoding error:', error);
             setStartLoc(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
           } finally {
             setIsLocating(false);
@@ -62,7 +68,7 @@ export default function RoutePage() {
     }
   }, []);
 
-  // Mapbox Autocomplete Search
+  // Nominatim Autocomplete Search
   useEffect(() => {
     const delayDebounceFn = setTimeout(async () => {
       if (!searchQuery.trim()) {
@@ -71,28 +77,28 @@ export default function RoutePage() {
       }
       setIsSearchingApi(true);
       try {
-        const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || '';
-        if (!token) return;
-        
-        // Search specifically in Indonesia
-        const res = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(searchQuery)}.json?country=id&access_token=${token}`);
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchQuery)}&format=json&countrycodes=id&limit=5`, {
+          headers: { 'User-Agent': 'SafeHerApp/1.0' }
+        });
         const data = await res.json();
         
-        if (data && data.features) {
-          const results = data.features.map((feature: any) => ({
-            id: feature.id,
-            name: feature.text,
-            address: feature.place_name.replace(`${feature.text}, `, ''),
-            coordinates: feature.center,
+        if (data && data.length > 0) {
+          const results = data.map((feature: any) => ({
+            id: feature.place_id.toString(),
+            name: feature.name || feature.display_name.split(',')[0],
+            address: feature.display_name,
+            coordinates: [parseFloat(feature.lon), parseFloat(feature.lat)] as [number, number],
           }));
           setSearchResults(results);
+        } else {
+          setSearchResults([]);
         }
       } catch (error) {
         console.error('Search error:', error);
       } finally {
         setIsSearchingApi(false);
       }
-    }, 500); // 500ms debounce
+    }, 600); // 600ms debounce
 
     return () => clearTimeout(delayDebounceFn);
   }, [searchQuery]);
@@ -101,7 +107,7 @@ export default function RoutePage() {
     {
       id: '1',
       name: 'Fakultas Ilmu Komputer, UI',
-      address: 'Jl. Prof. DR. Sudjono D. Pusponegoro',
+      address: 'Jl. Prof. DR. Sudjono D. Pusponegoro, Depok',
       distance: '5,2 KM',
       status: 'Aman',
       icon: <GraduationCap className="w-5 h-5 text-[#4D4D81]" />,
@@ -123,7 +129,7 @@ export default function RoutePage() {
     {
       id: '3',
       name: 'Margo City Depok',
-      address: 'Jl. Margonda Raya No. 358, Kemiri Mu...',
+      address: 'Jl. Margonda Raya No. 358, Kemiri Muka',
       distance: '8,4 KM',
       status: 'Siaga',
       icon: <ShoppingBag className="w-5 h-5 text-[#307B7A]" />,
@@ -154,7 +160,35 @@ export default function RoutePage() {
     setEndLoc(null);
   };
 
-  const isRouteReady = startLoc && endLoc && !isLocating;
+  const handleSearchRoute = async () => {
+    if (!startCoords || !endLoc) return;
+    setIsRouting(true);
+    
+    try {
+      const payload = {
+        origin_lon: startCoords[0],
+        origin_lat: startCoords[1],
+        destination_lon: endLoc.coordinates[0],
+        destination_lat: endLoc.coordinates[1],
+        datetime: new Date().toISOString()
+      };
+      
+      const response = await api.post('/api/v1/trips/routes/recommend', payload);
+      console.log('Route Recommendation:', response.data);
+      
+      // Jika berhasil memanggil API, bisa diarahkan ke halaman detail rute (jika ada)
+      // router.push('/route/result'); 
+      alert('Rute berhasil ditemukan melalui server!');
+      
+    } catch (error) {
+      console.error('Failed to get route recommendation:', error);
+      alert('Gagal mengambil data rute dari server.');
+    } finally {
+      setIsRouting(false);
+    }
+  };
+
+  const isRouteReady = startCoords && endLoc && !isLocating;
 
   return (
     <div className="w-full max-w-6xl mx-auto px-4 py-4 md:py-10 bg-white min-h-screen flex flex-col font-sans mb-20 relative">
@@ -302,14 +336,22 @@ export default function RoutePage() {
 
           {/* Button */}
           <button 
-            disabled={!isRouteReady}
-            className={`w-full mt-6 font-bold py-3.5 rounded-lg text-sm tracking-wide shadow-sm transition-colors ${
+            disabled={!isRouteReady || isRouting}
+            onClick={handleSearchRoute}
+            className={`w-full mt-6 flex items-center justify-center font-bold py-3.5 rounded-lg text-sm tracking-wide shadow-sm transition-colors ${
               isRouteReady 
                 ? 'bg-sistech-pink text-white hover:bg-pink-600 active:scale-[0.98]' 
                 : 'bg-[#A8A8A8] text-neutral-500 cursor-not-allowed'
             }`}
           >
-            CARI RUTE
+            {isRouting ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                MENCARI...
+              </>
+            ) : (
+              'CARI RUTE'
+            )}
           </button>
         </div>
 
