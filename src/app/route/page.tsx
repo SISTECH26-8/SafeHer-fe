@@ -103,41 +103,10 @@ export default function RoutePage() {
     return () => clearTimeout(delayDebounceFn);
   }, [searchQuery]);
 
-  const recentDestinations = [
-    {
-      id: '1',
-      name: 'Fakultas Ilmu Komputer, UI',
-      address: 'Jl. Prof. DR. Sudjono D. Pusponegoro, Depok',
-      distance: '5,2 KM',
-      status: 'Aman',
-      icon: <GraduationCap className="w-5 h-5 text-[#4D4D81]" />,
-      bgIcon: 'bg-[#E3E3F0]',
-      badgeColor: 'bg-[#14C911] text-white',
-      coordinates: [106.8295, -6.3645] as [number, number],
-    },
-    {
-      id: '2',
-      name: 'Kylau Common Space',
-      address: 'Jl. Palakali, Kukusan, Beji',
-      distance: '2,8 KM',
-      status: 'Awas',
-      icon: <Coffee className="w-5 h-5 text-[#8A5A44]" />,
-      bgIcon: 'bg-[#E5D7D0]',
-      badgeColor: 'bg-[#FF8A00] text-white',
-      coordinates: [106.8200, -6.3700] as [number, number],
-    },
-    {
-      id: '3',
-      name: 'Margo City Depok',
-      address: 'Jl. Margonda Raya No. 358, Kemiri Muka',
-      distance: '8,4 KM',
-      status: 'Siaga',
-      icon: <ShoppingBag className="w-5 h-5 text-[#307B7A]" />,
-      bgIcon: 'bg-[#CBE4E4]',
-      badgeColor: 'bg-[#E3D015] text-white',
-      coordinates: [106.8335, -6.3725] as [number, number],
-    }
-  ];
+  const [recentDestinations, setRecentDestinations] = useState<any[]>([]);
+
+  // TODO: Fetch recent destinations from backend when available
+  // For now, it's empty. When the user successfully routes, we could add to it.
 
   const handleSelectLocation = (loc: Location) => {
     setEndLoc(loc);
@@ -191,58 +160,64 @@ export default function RoutePage() {
   const isRouteReady = startCoords && endLoc && !isLocating;
 
   return (
-    <div className="w-full max-w-6xl mx-auto px-4 py-4 md:py-10 bg-white min-h-screen flex flex-col font-sans mb-20 relative">
+    <div className="w-full max-w-6xl mx-auto px-4 py-8 md:py-16 bg-white min-h-[calc(100vh-200px)] flex flex-col font-sans mb-10 relative">
       
       {/* Search Overlay */}
       {isSearching && (
-        <div className="absolute inset-0 bg-white z-50 flex flex-col p-4 animate-in fade-in zoom-in-95 duration-200 min-h-screen">
-          <div className="flex items-center space-x-3 mb-6 w-full max-w-lg mx-auto">
-            <button onClick={() => setIsSearching(false)} className="p-2 hover:bg-neutral-100 rounded-full">
+        <div className="absolute inset-0 bg-white/95 backdrop-blur-md z-50 flex flex-col p-4 animate-in fade-in zoom-in-95 duration-200 min-h-screen">
+          <div className="flex items-center space-x-3 mb-6 w-full max-w-2xl mx-auto mt-4 md:mt-10">
+            <button onClick={() => setIsSearching(false)} className="p-3 hover:bg-neutral-100 rounded-full transition-colors">
               <ArrowLeft className="w-6 h-6 text-neutral-800" />
             </button>
-            <div className="flex-1 bg-white border border-neutral-300 rounded-xl px-4 py-3 flex items-center shadow-sm">
-              <Search className="w-5 h-5 text-sistech-pink mr-3" />
+            <div className="flex-1 bg-white border border-neutral-200 rounded-2xl px-5 py-4 flex items-center shadow-lg shadow-pink-100/50">
+              <Search className="w-6 h-6 text-sistech-pink mr-3" />
               <input 
                 type="text" 
                 autoFocus
-                placeholder="Cari Lokasimu di Sini..." 
-                className="w-full bg-transparent border-none p-0 text-sm focus:outline-none focus:ring-0 text-neutral-900 placeholder:text-neutral-400"
+                placeholder="Mau pergi ke mana hari ini?" 
+                className="w-full bg-transparent border-none p-0 text-base md:text-lg focus:outline-none focus:ring-0 text-neutral-900 placeholder:text-neutral-400 font-medium"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
-              {isSearchingApi && <Loader2 className="w-4 h-4 text-neutral-400 animate-spin ml-2" />}
+              {isSearchingApi && <Loader2 className="w-5 h-5 text-sistech-pink animate-spin ml-2" />}
             </div>
           </div>
           
-          <div className="flex-1 w-full max-w-lg mx-auto overflow-y-auto space-y-3">
+          <div className="flex-1 w-full max-w-2xl mx-auto overflow-y-auto space-y-4 pb-20">
             {searchResults.length > 0 ? (
               searchResults.map((res) => (
-                <div key={res.id} onClick={() => handleSelectLocation(res)} className="w-full bg-[#FFEBF0] rounded-xl p-4 flex items-center shadow-sm relative border border-pink-100/50 hover:bg-pink-100 cursor-pointer transition-colors">
-                  <div className="w-10 h-10 bg-[#E3E3F0] rounded-lg flex items-center justify-center flex-shrink-0 mr-4">
-                    <MapPin className="w-5 h-5 text-[#4D4D81]" />
+                <div key={res.id} onClick={() => handleSelectLocation(res)} className="w-full bg-white rounded-2xl p-4 md:p-5 flex items-center shadow-sm relative border border-neutral-100 hover:border-pink-200 hover:bg-pink-50 cursor-pointer transition-all hover:shadow-md">
+                  <div className="w-12 h-12 bg-pink-100 rounded-xl flex items-center justify-center flex-shrink-0 mr-4 md:mr-5">
+                    <MapPin className="w-6 h-6 text-sistech-pink" />
                   </div>
                   <div className="flex flex-col flex-1 overflow-hidden">
-                    <h4 className="text-sm font-bold text-black truncate">{res.name}</h4>
-                    <span className="text-[10px] text-neutral-600 truncate mt-0.5">{res.address}</span>
+                    <h4 className="text-base md:text-lg font-bold text-neutral-900 truncate">{res.name}</h4>
+                    <span className="text-xs md:text-sm text-neutral-500 truncate mt-1">{res.address}</span>
                   </div>
                 </div>
               ))
             ) : searchQuery.length > 0 && !isSearchingApi ? (
-              <p className="text-center text-sm text-neutral-500 mt-10">Lokasi tidak ditemukan.</p>
+              <div className="text-center mt-20 flex flex-col items-center">
+                <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center mb-4">
+                  <Search className="w-8 h-8 text-neutral-400" />
+                </div>
+                <p className="text-base text-neutral-500 font-medium">Yah, lokasi tidak ditemukan.</p>
+                <p className="text-sm text-neutral-400 mt-1">Coba masukkan kata kunci yang lebih spesifik.</p>
+              </div>
             ) : null}
 
             {/* If no search query, show recent or popular */}
-            {!searchQuery && (
+            {!searchQuery && recentDestinations.length > 0 && (
               <>
-                <p className="text-xs font-bold text-neutral-500 mb-2 mt-4 ml-1">Rekomendasi / Tujuan Terakhir</p>
+                <p className="text-sm font-bold text-neutral-900 mb-3 mt-6 ml-2 uppercase tracking-wide">Rekomendasi / Tujuan Terakhir</p>
                 {recentDestinations.map((dest) => (
-                  <div key={dest.id} onClick={() => handleSelectRecent(dest)} className="w-full bg-[#FFEBF0] rounded-xl p-4 flex items-center shadow-sm relative border border-pink-100/50 hover:bg-pink-100 cursor-pointer transition-colors">
-                    <div className={`w-10 h-10 ${dest.bgIcon} rounded-lg flex items-center justify-center flex-shrink-0 mr-4`}>
+                  <div key={dest.id} onClick={() => handleSelectRecent(dest)} className="w-full bg-white rounded-2xl p-4 md:p-5 flex items-center shadow-sm relative border border-neutral-100 hover:border-pink-200 hover:bg-pink-50 cursor-pointer transition-all hover:shadow-md">
+                    <div className={`w-12 h-12 ${dest.bgIcon} rounded-xl flex items-center justify-center flex-shrink-0 mr-4 md:mr-5`}>
                       {dest.icon}
                     </div>
                     <div className="flex flex-col overflow-hidden flex-1">
-                      <h4 className="text-sm font-bold text-black truncate">{dest.name}</h4>
-                      <div className="flex items-center text-[10px] md:text-xs text-neutral-600 mt-0.5">
+                      <h4 className="text-base font-bold text-neutral-900 truncate">{dest.name}</h4>
+                      <div className="flex items-center text-xs text-neutral-500 mt-1">
                         <span className="truncate">{dest.address}</span>
                       </div>
                     </div>
@@ -254,143 +229,155 @@ export default function RoutePage() {
         </div>
       )}
 
-      {/* Top Banner SOS */}
-      <div className={`w-full border border-neutral-300 rounded-xl p-4 md:p-6 flex flex-col md:flex-row items-center md:items-start mb-6 md:mb-10 bg-white shadow-sm md:space-x-6 ${isSearching ? 'hidden' : ''}`}>
-        <div className="flex items-center space-x-3 mb-2 md:mb-0">
-          <div className="relative flex-shrink-0">
-             <div className="w-10 h-10 md:w-14 md:h-14 bg-green-700 rounded-lg flex items-center justify-center">
-                <div className="w-4 h-4 md:w-6 md:h-6 bg-white rounded-full"></div>
-             </div>
-             <div className="absolute -bottom-2 -right-2 text-[10px] md:text-xs font-extrabold text-red-500 bg-white px-1 shadow-sm rounded">SOS</div>
-          </div>
-          <h2 className="text-base md:text-xl font-bold text-[#4B3C26] md:hidden">Selalu Ada Bantuan untukmu!</h2>
-        </div>
-        <div className="flex flex-col text-center md:text-left">
-           <h2 className="hidden md:block text-xl font-bold text-[#4B3C26] mb-1">Selalu Ada Bantuan untukmu!</h2>
-           <p className="text-xs md:text-sm text-neutral-700 leading-relaxed mt-1 md:mt-0">
-             Fitur SOS kamu sudah aktif ke layanan darurat resmi. Yuk, tambahkan kontak terdekatmu juga biar ada teman atau keluarga yang langsung tahu kalau kamu butuh bantuan!
-           </p>
-        </div>
-      </div>
-
-      <div className={`flex flex-col lg:flex-row w-full gap-6 lg:gap-10 ${isSearching ? 'hidden' : ''}`}>
+      <div className={`flex flex-col lg:flex-row gap-8 md:gap-16 items-start w-full ${isSearching ? 'hidden' : ''}`}>
         
-        {/* Route Form (Left on Desktop) */}
-        <div className="w-full lg:w-1/2 bg-[#E5E5E5] rounded-xl p-4 md:p-6 md:h-fit shadow-sm">
-          <h3 className="text-sm font-extrabold text-black uppercase mb-4 tracking-wide hidden md:block">
-            Cari Rute Aman
-          </h3>
+        {/* Left Side: Header & Info (Sticky on Desktop) */}
+        <div className="w-full lg:w-5/12 lg:sticky lg:top-24 flex flex-col">
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-neutral-900 mb-4 md:mb-6 leading-[1.15] tracking-tight">
+            Temukan rute <span className="text-sistech-pink relative">teraman<svg className="absolute -bottom-2 left-0 w-full h-3 text-pink-200 -z-10" viewBox="0 0 100 10" preserveAspectRatio="none"><path d="M0 5 Q 50 10 100 5" stroke="currentColor" strokeWidth="4" fill="transparent"/></svg></span> untuk perjalananmu
+          </h1>
+          <p className="text-base md:text-lg text-neutral-600 leading-relaxed mb-8 md:mb-10">
+            Sistem kami menganalisis data rute secara *real-time* untuk memberikan rekomendasi jalur terbaik yang menghindari area rawan, agar kamu bisa sampai di tujuan dengan tenang.
+          </p>
           
-          {/* Start Location */}
-          <div className="w-full bg-[#C4C4C4] rounded-lg p-3 flex items-center shadow-sm relative z-10 transition-colors">
-             <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0 text-white shadow-sm">
-               {isLocating ? (
-                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-               ) : (
-                 <MapPin className="w-4 h-4" />
-               )}
-             </div>
-             <div className="ml-3 flex-1 overflow-hidden">
-               <p className="text-sm font-bold text-black truncate">Lokasi Kamu (GPS)</p>
-               <p className="text-xs text-neutral-700 truncate" title={startLoc}>{startLoc}</p>
-             </div>
-             <div className="text-blue-700 ml-2 p-1">
-               <div className="w-4 h-4 border-2 border-blue-700 rounded-full flex items-center justify-center">
-                 <div className="w-1.5 h-1.5 bg-blue-700 rounded-full"></div>
+          {/* Top Banner SOS as a styled card */}
+          <div className="w-full border border-neutral-100 rounded-3xl p-6 bg-gradient-to-br from-white to-red-50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col md:flex-row lg:flex-col items-center md:items-start lg:items-start gap-4">
+            <div className="relative flex-shrink-0">
+               <div className="w-14 h-14 bg-green-600 rounded-2xl flex items-center justify-center shadow-lg shadow-green-200">
+                  <div className="w-6 h-6 bg-white rounded-full"></div>
                </div>
-             </div>
+               <div className="absolute -bottom-2 -right-2 text-[10px] font-extrabold text-white bg-red-500 px-1.5 py-0.5 shadow-sm rounded border border-white tracking-widest">SOS</div>
+            </div>
+            <div className="flex flex-col text-center md:text-left lg:text-left">
+               <h2 className="text-lg md:text-xl font-bold text-neutral-900 mb-1.5">Selalu Ada Bantuan!</h2>
+               <p className="text-sm text-neutral-600 leading-relaxed">
+                 Fitur SOS kamu sudah aktif ke layanan darurat resmi. Tambahkan kontak terdekatmu agar ada yang langsung tahu saat kamu butuh bantuan!
+               </p>
+            </div>
           </div>
-
-          {/* Dotted Line */}
-          <div className="h-10 border-l-2 border-dotted border-neutral-500 ml-8 my-1 opacity-50"></div>
-
-          {/* Destination */}
-          <div 
-            onClick={() => setIsSearching(true)}
-            className={`w-full ${endLoc ? 'bg-[#C4C4C4]' : 'bg-[#C4C4C4]/80 hover:bg-[#C4C4C4]'} rounded-lg p-3 flex items-center shadow-sm relative z-10 transition-colors cursor-pointer group`}
-          >
-             <div className="w-8 h-8 rounded-full bg-red-600 flex items-center justify-center flex-shrink-0 text-white shadow-sm">
-               <MapPin className="w-4 h-4" />
-             </div>
-             
-             {endLoc ? (
-               <>
-                 <div className="ml-3 flex-1 overflow-hidden">
-                   <p className="text-sm font-bold text-black truncate uppercase">{endLoc.name}</p>
-                   <p className="text-xs text-neutral-700 truncate">{endLoc.address}</p>
-                 </div>
-                 <button 
-                   onClick={handleClearDestination}
-                   className="text-black ml-2 p-1.5 hover:bg-black/10 rounded-full transition-colors"
-                 >
-                   <X className="w-4 h-4 font-bold" />
-                 </button>
-               </>
-             ) : (
-               <div className="ml-3 flex-1 overflow-hidden">
-                 <p className="text-sm font-bold text-black mb-0.5">Tujuan Perjalanan</p>
-                 <p className="text-xs text-neutral-600 truncate">Klik untuk mencari tujuan perjalananmu!</p>
-               </div>
-             )}
-          </div>
-
-          {/* Button */}
-          <button 
-            disabled={!isRouteReady || isRouting}
-            onClick={handleSearchRoute}
-            className={`w-full mt-6 flex items-center justify-center font-bold py-3.5 rounded-lg text-sm tracking-wide shadow-sm transition-colors ${
-              isRouteReady 
-                ? 'bg-sistech-pink text-white hover:bg-pink-600 active:scale-[0.98]' 
-                : 'bg-[#A8A8A8] text-neutral-500 cursor-not-allowed'
-            }`}
-          >
-            {isRouting ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                MENCARI...
-              </>
-            ) : (
-              'CARI RUTE'
-            )}
-          </button>
         </div>
 
-        {/* Recent Destinations (Right on Desktop) */}
-        <div className="w-full lg:w-1/2 flex flex-col">
-          <h3 className="text-xs md:text-sm font-extrabold text-black uppercase mb-4 tracking-wide">
-            Tujuan Terakhir yang Dikunjungi
-          </h3>
-          <div className="space-y-3 md:space-y-4">
-            {recentDestinations.map((dest) => (
-              <div key={dest.id} onClick={() => handleSelectRecent(dest)} className="w-full bg-[#FFEBF0] rounded-xl p-3 md:p-5 flex items-center justify-between shadow-sm relative border border-pink-100/50 hover:bg-pink-50 transition-colors cursor-pointer">
-                <div className="flex items-center space-x-3 md:space-x-4 overflow-hidden flex-1">
-                  <div className={`w-10 h-10 md:w-12 md:h-12 ${dest.bgIcon} rounded-lg flex items-center justify-center flex-shrink-0`}>
-                    {dest.icon}
-                  </div>
-                  <div className="flex flex-col overflow-hidden">
-                    <h4 className="text-sm md:text-base font-bold text-black truncate">{dest.name}</h4>
-                    <div className="flex items-center text-[10px] md:text-xs text-neutral-600 mt-0.5 md:mt-1">
-                      <span className="truncate max-w-[120px] md:max-w-[200px]">{dest.address}</span>
-                      <span className="mx-1 font-bold">&bull;</span>
-                      <span className="font-bold text-black">{dest.distance}</span>
+        {/* Right Side: Form Container */}
+        <div className="w-full lg:w-7/12 max-w-xl mx-auto lg:mx-0 flex flex-col gap-8">
+          
+          <div className="w-full bg-white rounded-[2rem] p-6 md:p-10 shadow-[0_8px_30px_rgb(0,0,0,0.08)] relative z-10 border border-neutral-100">
+            <h3 className="text-sm font-extrabold text-neutral-900 uppercase mb-6 tracking-wider hidden md:block">
+              Pilih Tujuan Perjalanan
+            </h3>
+            
+            {/* Start Location */}
+            <div className="w-full bg-neutral-50 border border-neutral-100 rounded-2xl p-4 flex items-center shadow-sm relative z-10 transition-all">
+               <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0 text-blue-600 shadow-inner">
+                 {isLocating ? (
+                   <Loader2 className="w-5 h-5 animate-spin" />
+                 ) : (
+                   <MapPin className="w-5 h-5" />
+                 )}
+               </div>
+               <div className="ml-4 flex-1 overflow-hidden">
+                 <p className="text-xs font-bold text-neutral-500 uppercase tracking-wide mb-0.5">Lokasi Kamu (GPS)</p>
+                 <p className="text-sm md:text-base font-bold text-neutral-900 truncate" title={startLoc}>{startLoc}</p>
+               </div>
+               <div className="text-blue-500 ml-2 p-2">
+                 <div className="w-5 h-5 border-[3px] border-blue-500 rounded-full flex items-center justify-center">
+                   <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                 </div>
+               </div>
+            </div>
+
+            {/* Dotted Line */}
+            <div className="h-12 border-l-2 border-dashed border-neutral-300 ml-9 my-1 opacity-70"></div>
+
+            {/* Destination */}
+            <div 
+              onClick={() => setIsSearching(true)}
+              className={`w-full ${endLoc ? 'bg-neutral-50 border-neutral-100' : 'bg-white border-dashed border-neutral-300 hover:bg-neutral-50 hover:border-solid hover:border-pink-200'} border-2 rounded-2xl p-4 flex items-center shadow-sm relative z-10 transition-all cursor-pointer group`}
+            >
+               <div className={`w-10 h-10 rounded-xl ${endLoc ? 'bg-sistech-pink text-white shadow-md shadow-pink-200' : 'bg-neutral-100 text-neutral-400 group-hover:bg-pink-100 group-hover:text-sistech-pink'} flex items-center justify-center flex-shrink-0 transition-colors`}>
+                 <MapPin className="w-5 h-5" />
+               </div>
+               
+               {endLoc ? (
+                 <>
+                   <div className="ml-4 flex-1 overflow-hidden">
+                     <p className="text-xs font-bold text-neutral-500 uppercase tracking-wide mb-0.5">Tujuan</p>
+                     <p className="text-sm md:text-base font-bold text-neutral-900 truncate">{endLoc.name}</p>
+                   </div>
+                   <button 
+                     onClick={handleClearDestination}
+                     className="text-neutral-400 ml-2 p-2 hover:bg-neutral-200 hover:text-neutral-800 rounded-full transition-colors"
+                   >
+                     <X className="w-5 h-5 font-bold" />
+                   </button>
+                 </>
+               ) : (
+                 <div className="ml-4 flex-1 overflow-hidden">
+                   <p className="text-sm md:text-base font-bold text-neutral-900 mb-0.5 group-hover:text-sistech-pink transition-colors">Tujuan Perjalanan</p>
+                   <p className="text-xs md:text-sm text-neutral-500 truncate">Klik untuk mencari tujuan perjalananmu!</p>
+                 </div>
+               )}
+            </div>
+
+            {/* Button */}
+            <button 
+              disabled={!isRouteReady || isRouting}
+              onClick={handleSearchRoute}
+              className={`w-full mt-8 flex items-center justify-center font-extrabold py-4 rounded-full text-sm tracking-wide shadow-lg transition-all ${
+                isRouteReady 
+                  ? 'bg-sistech-pink text-white hover:bg-pink-600 shadow-pink-200 hover:shadow-xl hover:shadow-pink-200/50 hover:-translate-y-0.5 active:scale-[0.98]' 
+                  : 'bg-neutral-200 text-neutral-400 cursor-not-allowed shadow-none'
+              }`}
+            >
+              {isRouting ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  MENCARI RUTE AMAN...
+                </>
+              ) : (
+                'CARI RUTE AMAN'
+              )}
+            </button>
+          </div>
+
+          {/* Recent Destinations (Right Side below form) */}
+          {recentDestinations.length > 0 && (
+            <div className="w-full flex flex-col mt-2">
+              <h3 className="text-xs md:text-sm font-extrabold text-neutral-900 uppercase mb-4 tracking-wider pl-2">
+                Tujuan Terakhir yang Dikunjungi
+              </h3>
+              <div className="space-y-3">
+                {recentDestinations.map((dest) => (
+                  <div key={dest.id} onClick={() => handleSelectRecent(dest)} className="w-full bg-white rounded-2xl p-4 flex items-center justify-between shadow-sm relative border border-neutral-100 hover:border-pink-200 hover:bg-pink-50 transition-all cursor-pointer group hover:shadow-md">
+                    <div className="flex items-center space-x-4 overflow-hidden flex-1">
+                      <div className={`w-12 h-12 ${dest.bgIcon} rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform`}>
+                        {dest.icon}
+                      </div>
+                      <div className="flex flex-col overflow-hidden">
+                        <h4 className="text-sm md:text-base font-bold text-neutral-900 truncate group-hover:text-sistech-pink transition-colors">{dest.name}</h4>
+                        <div className="flex items-center text-[11px] md:text-xs text-neutral-500 mt-1">
+                          <span className="truncate max-w-[120px] md:max-w-[200px]">{dest.address}</span>
+                          <span className="mx-2 font-bold text-neutral-300">&bull;</span>
+                          <span className="font-bold text-neutral-700">{dest.distance}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="ml-3 flex-shrink-0">
+                       <div className={`px-3 py-1.5 rounded-lg text-[10px] md:text-xs font-bold ${dest.badgeColor} shadow-sm uppercase tracking-wide`}>
+                         {dest.status}
+                       </div>
                     </div>
                   </div>
-                </div>
-                <div className="ml-2 flex-shrink-0">
-                   <div className={`px-2 py-1 md:px-3 md:py-1.5 rounded md:rounded-md text-[10px] md:text-xs font-bold ${dest.badgeColor} shadow-sm`}>
-                     {dest.status}
-                   </div>
-                </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Bottom Info Banner */}
-      <div className={`w-full bg-[#EAE8FF] border border-[#7A6AE6] rounded-xl p-4 md:p-5 text-center mt-8 md:mt-12 shadow-sm ${isSearching ? 'hidden' : ''}`}>
+      <div className={`w-full max-w-2xl mx-auto bg-gradient-to-r from-[#EAE8FF] to-pink-50 border border-[#7A6AE6]/20 rounded-2xl p-5 text-center mt-12 shadow-sm ${isSearching ? 'hidden' : ''}`}>
         <p className="text-[#3E2E95] text-sm md:text-base font-bold leading-snug">
-          Merasa terancam? Tekan tombol SOS melayang di kanan bawah kapan saja!
+          Merasa terancam? Tekan tombol <span className="text-red-500 font-extrabold">SOS</span> melayang di kanan bawah kapan saja!
         </p>
       </div>
 
