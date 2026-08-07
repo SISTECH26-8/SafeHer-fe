@@ -26,7 +26,7 @@ export default function Home() {
         </div>
         <div className="w-full md:w-1/2 relative h-[250px] sm:h-[300px] md:h-[450px] rounded-2xl md:rounded-3xl overflow-hidden shadow-lg md:shadow-2xl order-1 md:order-2">
           <img 
-            src="https://images.unsplash.com/photo-1542202229-7d93c2700d9b?auto=format&fit=crop&q=80&w=800" 
+            src="/forest-path.jpg" 
             alt="Forest Path" 
             className="object-cover w-full h-full"
           />

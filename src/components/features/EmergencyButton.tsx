@@ -77,8 +77,8 @@ export default function EmergencyButton() {
 
           // 1. Panggil Endpoint SOS Utama (Backend akan mengirimkan notifikasi via WA Gateway)
           const response = await api.post('/api/v1/emergency/sos', {
-            latitude: latitude,
-            longitude: longitude,
+            current_lat: latitude,
+            current_lon: longitude,
           });
 
           // 2. Simpan session ID dan tracking URL dari response backend
@@ -86,7 +86,9 @@ export default function EmergencyButton() {
             if (response.data.sos_session_id) {
               setSosSessionId(response.data.sos_session_id);
             }
-            if (response.data.tracking_url) {
+            if (response.data.live_tracking_url) {
+              setTrackingUrl(response.data.live_tracking_url);
+            } else if (response.data.tracking_url) {
               setTrackingUrl(response.data.tracking_url);
             } else {
               setTrackingUrl(`https://safeher-be.onrender.com/track/${response.data.sos_session_id || ''}`);
@@ -95,8 +97,19 @@ export default function EmergencyButton() {
           
           setSosState('share_modal');
         } catch (error: any) {
-          console.error("SOS Error:", error);
-          alert(error.response?.data?.detail || "Gagal mengirim sinyal SOS. Pastikan kontak darurat sudah terdaftar.");
+          console.log("SOS Error:", error);
+          const detail = error.response?.data?.detail;
+          let errorMsg = "Gagal mengirim sinyal SOS. Pastikan kontak darurat sudah terdaftar.";
+          if (detail) {
+            if (typeof detail === 'string') {
+              errorMsg = detail;
+            } else if (Array.isArray(detail)) {
+              errorMsg = detail.map((d: any) => `${d.loc?.join('.')}: ${d.msg}`).join(', ');
+            } else {
+              errorMsg = JSON.stringify(detail);
+            }
+          }
+          alert(errorMsg);
           setSosState('idle');
         }
       },
@@ -304,6 +317,23 @@ export default function EmergencyButton() {
               </h3>
               
               <div className="w-full flex flex-col gap-3 mb-6">
+                {/* Hubungi via WhatsApp */}
+                <a 
+                  href={`https://wa.me/?text=${encodeURIComponent(`[DARURAT] Tolong saya! Saya merasa tidak aman. Lokasi saya saat ini: https://www.google.com/maps?q=${userLocation?.lat},${userLocation?.lon}\n\nLacak lokasi saya: ${trackingUrl}`)}`} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="bg-[#25D366] hover:bg-[#1DA851] text-white p-3.5 rounded-xl flex items-center shadow-sm transition-colors group"
+                >
+                  <div className="bg-white/20 p-2 rounded-lg mr-3 group-hover:scale-105 transition-transform shrink-0">
+                    <Phone className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <h4 className="font-bold text-sm">Kirim WhatsApp</h4>
+                    <p className="text-[11px] text-white/80 mt-0.5">Bagikan lokasi ke kontak WA</p>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-white/60 group-hover:text-white transition-colors" />
+                </a>
+
                 {/* Panggil Darurat 110 */}
                 <a href="tel:110" className="bg-[#6A5AE0] hover:bg-[#5C4DD0] text-white p-3.5 rounded-xl flex items-center shadow-sm transition-colors group">
                   <div className="bg-white/20 p-2 rounded-lg mr-3 group-hover:scale-105 transition-transform shrink-0">
