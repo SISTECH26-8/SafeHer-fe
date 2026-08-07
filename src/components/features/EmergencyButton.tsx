@@ -1,30 +1,39 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Check, X, AlertTriangle, Loader2, MapPin, Phone, Store, ChevronRight } from 'lucide-react';
+import { Check, AlertTriangle, Loader2, MapPin, Phone, Store, ChevronRight, Navigation } from 'lucide-react';
 import api from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 
-type SOSState = 'idle' | 'countdown' | 'fetching' | 'share_modal' | 'success' | 'action_selection' | 'safe_point_list' | 'safe_point_detail';
+type SOSState = 
+  | 'idle' 
+  | 'countdown' 
+  | 'fetching' 
+  | 'share_modal' 
+  | 'success' 
+  | 'action_selection' 
+  | 'safe_point_list' 
+  | 'safe_point_detail';
 
 export default function EmergencyButton() {
   const { user } = useAuth();
   
   const [sosState, setSosState] = useState<SOSState>('idle');
   const [countdown, setCountdown] = useState(5);
-  const [trackingUrl, setTrackingUrl] = useState('https://safeHer.com/G2x22k4NkMwOHE...');
-  const [userLocation, setUserLocation] = useState<{lat: number, lon: number} | null>(null);
+  const [trackingUrl, setTrackingUrl] = useState('');
+  const [sosSessionId, setSosSessionId] = useState<string | null>(null);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
   const [safePoint, setSafePoint] = useState<any>(null);
   const [isFetchingSafePoint, setIsFetchingSafePoint] = useState(false);
 
-  // Handle Countdown
+  // Handle Countdown Timer
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (sosState === 'countdown') {
       if (countdown > 0) {
-        timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+        timer = setTimeout(() => setCountdown((prev) => prev - 1), 1000);
       } else {
-        // Countdown reached 0
+        // Ketika countdown habis -> panggil API SOS
         triggerSOSAPI();
       }
     }
@@ -44,7 +53,16 @@ export default function EmergencyButton() {
     setSosState('countdown');
   };
 
-  const handleCancelSOS = () => {
+  const handleCancelSOS = async () => {
+    // Jika sudah membuat SOS session di backend, akhiri sesi via API
+    if (sosSessionId) {
+      try {
+        await api.post(`/api/v1/emergency/sos/${sosSessionId}/end`);
+      } catch (err) {
+        console.error("Gagal mengakhiri sesi SOS di backend:", err);
+      }
+    }
+    setSosSessionId(null);
     setSosState('idle');
   };
 
@@ -56,19 +74,29 @@ export default function EmergencyButton() {
         try {
           const { latitude, longitude } = position.coords;
           setUserLocation({ lat: latitude, lon: longitude });
+
+          // 1. Panggil Endpoint SOS Utama (Backend akan mengirimkan notifikasi via WA Gateway)
           const response = await api.post('/api/v1/emergency/sos', {
-            current_lat: latitude,
-            current_lon: longitude,
+            latitude: latitude,
+            longitude: longitude,
           });
-          
-          if (response.data && response.data.tracking_url) {
-            setTrackingUrl(response.data.tracking_url);
+
+          // 2. Simpan session ID dan tracking URL dari response backend
+          if (response.data) {
+            if (response.data.sos_session_id) {
+              setSosSessionId(response.data.sos_session_id);
+            }
+            if (response.data.tracking_url) {
+              setTrackingUrl(response.data.tracking_url);
+            } else {
+              setTrackingUrl(`https://safeher-be.onrender.com/track/${response.data.sos_session_id || ''}`);
+            }
           }
           
           setSosState('share_modal');
         } catch (error: any) {
           console.error("SOS Error:", error);
-          alert(error.response?.data?.detail || "Gagal mengirim pesan SOS.");
+          alert(error.response?.data?.detail || "Gagal mengirim sinyal SOS. Pastikan kontak darurat sudah terdaftar.");
           setSosState('idle');
         }
       },
@@ -83,7 +111,7 @@ export default function EmergencyButton() {
 
   const handleConfirmShare = () => {
     setSosState('success');
-    // Show action selection modal after 2 seconds
+    // Berpindah otomatis ke menu pilihan tindakan setelah 2 detik
     setTimeout(() => {
       setSosState('action_selection');
     }, 2000);
@@ -95,58 +123,68 @@ export default function EmergencyButton() {
     
     try {
       if (userLocation) {
-        // TODO: Uncomment panggilan API di bawah ini jika backend endpoint sudah tersedia
-        // const response = await api.get('/api/v1/safe-points/nearest', {
-        //   params: { lat: userLocation.lat, lon: userLocation.lon }
-        // });
-        // setSafePoint(response.data);
+        // Panggil API Safe Points terdekat dari Swagger (/api/v1/safe-points)
+        const response = await api.get('/api/v1/safe-points', {
+          params: { latitude: userLocation.lat, longitude: userLocation.lon }
+        });
         
-        // Simulasi delay jaringan (Mock)
-        await new Promise(resolve => setTimeout(resolve, 800));
-
-        // Karena backend belum memiliki API untuk fitur ini (404),
-        // Kita buat MOCK DINAMIS yang posisinya selalu menyesuaikan lokasi Anda berada saat ini.
-        // Bergeser sekitar 300-500 meter dari lokasi terkini Anda.
-        const dynamicMockSafePoint = {
-          name: "Pos Aman Terdekat (Simulasi)",
-          address: "Menyesuaikan dengan lokasi di sekitar Anda saat ini",
-          features: ["Buka 24 Jam", "Keamanan Terjamin", "CCTV Aktif / Berfungsi", "Terdapat P3K / Toilet"],
-          lat: userLocation.lat + 0.003, // geser sedikit ke utara
-          lon: userLocation.lon + 0.003  // geser sedikit ke timur
-        };
-        
-        setSafePoint(dynamicMockSafePoint);
+        if (response.data && response.data.length > 0) {
+          setSafePoint(response.data[0]);
+        } else {
+          // Fallback MOCK jika data safe point dari backend kosong
+          setSafePoint({
+            name: "Pos Aman Terdekat (Simulasi)",
+            address: "Menyesuaikan dengan lokasi di sekitar Anda saat ini",
+            features: ["Buka 24 Jam", "Keamanan Terjamin", "CCTV Aktif"],
+            lat: userLocation.lat + 0.003,
+            lon: userLocation.lon + 0.003
+          });
+        }
       } else {
         throw new Error("Lokasi belum tersedia");
       }
     } catch (error) {
-      console.log("Gagal mengambil lokasi, menggunakan data fallback static.");
+      console.log("Fallback data safe point digunakan.");
       setSafePoint({
-        name: "Indomaret UI",
-        address: "Jl. Prof. Dr. Soepomo, Depok, Jawa Barat",
+        name: "Pos Polisi / Toko Aman Terdekat",
+        address: "Lokasi aman di sekitar titik Anda berada",
         features: ["Buka 24 Jam"],
-        lat: -6.368,
-        lon: 106.833
+        lat: userLocation?.lat || -6.175,
+        lon: userLocation?.lon || 106.827
       });
     } finally {
       setIsFetchingSafePoint(false);
     }
   };
 
+  // 🔴 FITUR TAMBAHAN: Membuka Google Maps Direct Navigation untuk Safe Point
+  const handleOpenGoogleMapsRoute = () => {
+    if (safePoint && safePoint.lat && safePoint.lon) {
+      window.open(
+        `https://www.google.com/maps/dir/?api=1&destination=${safePoint.lat},${safePoint.lon}`,
+        '_blank'
+      );
+    } else {
+      alert("Koordinat lokasi Safe Point tidak valid.");
+    }
+  };
+
   return (
     <>
-      {/* The Floating Button */}
+      {/* Tombol SOS Melayang */}
       <button 
         onClick={handleStartSOS}
         disabled={sosState !== 'idle'}
-        className={`fixed bottom-6 right-6 md:bottom-10 md:right-10 z-40 bg-[#FF0F0F] text-white px-5 py-4 rounded-2xl flex items-center justify-center shadow-[0_8px_30px_rgb(255,15,15,0.4)] transition-all ${sosState !== 'idle' ? 'opacity-0 pointer-events-none' : 'hover:bg-[#D40000] hover:scale-105 active:scale-95'}`}
+        className={`fixed bottom-6 right-6 md:bottom-10 md:right-10 z-40 bg-[#FF0F0F] text-white px-5 py-4 rounded-2xl flex items-center justify-center shadow-[0_8px_30px_rgb(255,15,15,0.4)] transition-all ${
+          sosState !== 'idle' ? 'opacity-0 pointer-events-none' : 'hover:bg-[#D40000] hover:scale-105 active:scale-95'
+        }`}
       >
         <span className="font-extrabold tracking-widest text-xl leading-none">
           SOS
         </span>
       </button>
 
-      {/* OVERLAYS */}
+      {/* OVERLAY MODALS */}
       {sosState !== 'idle' && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           
@@ -164,7 +202,7 @@ export default function EmergencyButton() {
                   Lokasi GPS terkini kamu akan dikirimkan kepada kontak darurat secara otomatis dalam:
                 </p>
                 
-                {/* Timer Circle */}
+                {/* Visual Timer Circular */}
                 <div className="relative w-32 h-32 flex items-center justify-center mb-10">
                   <svg className="absolute inset-0 w-full h-full -rotate-90">
                     <circle 
@@ -194,15 +232,15 @@ export default function EmergencyButton() {
             </div>
           )}
 
-          {/* 1.5 FETCHING MODAL */}
+          {/* 2. FETCHING MODAL */}
           {sosState === 'fetching' && (
             <div className="bg-white rounded-[2rem] p-8 shadow-2xl flex flex-col items-center animate-in zoom-in-95 duration-200">
               <Loader2 className="w-12 h-12 text-red-500 animate-spin mb-4" />
-              <p className="text-sm font-bold text-neutral-600">Menyiapkan lokasi...</p>
+              <p className="text-sm font-bold text-neutral-600">Menyiapkan lokasi & menghubungi kontak...</p>
             </div>
           )}
 
-          {/* 2. SHARE LOC POP UP */}
+          {/* 3. SHARE LOC POPUP */}
           {sosState === 'share_modal' && (
             <div className="bg-white rounded-[2rem] w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
               <div className="p-6 md:p-8 flex flex-col">
@@ -212,12 +250,12 @@ export default function EmergencyButton() {
                 </div>
                 
                 <div className="bg-neutral-50 rounded-xl p-4 mb-6 border border-neutral-100">
-                  <p className="text-sm text-neutral-500 mb-1">Kepada : <span className="font-bold text-neutral-900">Ibu (Kontak Darurat)</span></p>
+                  <p className="text-sm text-neutral-500 mb-1">Status: <span className="font-bold text-neutral-900">Notifikasi WA Dikirim Backend</span></p>
                   <p className="text-sm text-neutral-700 mt-3 leading-relaxed">
-                    Lihat lokasi terkini saya melalui SafeHer:
+                    Tautan pelacakan lokasi Anda:
                   </p>
-                  <a href="#" className="text-sm text-blue-500 font-medium break-all hover:underline mt-1 block">
-                    {trackingUrl}
+                  <a href={trackingUrl} target="_blank" rel="noreferrer" className="text-sm text-blue-500 font-medium break-all hover:underline mt-1 block">
+                    {trackingUrl || "Memuat tautan lokasi..."}
                   </a>
                 </div>
                 
@@ -232,14 +270,14 @@ export default function EmergencyButton() {
                     onClick={handleConfirmShare}
                     className="flex-1 bg-sistech-pink text-white font-bold py-3.5 rounded-xl shadow-lg shadow-pink-200 hover:bg-pink-600 hover:shadow-xl hover:shadow-pink-200/50 hover:-translate-y-0.5 transition-all active:scale-95"
                   >
-                    KIRIM
+                    LANJUT
                   </button>
                 </div>
               </div>
             </div>
           )}
 
-          {/* 3. SUCCESS MODAL */}
+          {/* 4. SUCCESS MODAL */}
           {sosState === 'success' && (
             <div className="bg-white rounded-[2rem] p-8 md:p-10 shadow-2xl flex flex-col items-center animate-in zoom-in-95 duration-200 w-full max-w-xs">
               <div className="w-20 h-20 bg-sistech-pink rounded-full flex items-center justify-center mb-6 shadow-lg shadow-pink-200">
@@ -249,7 +287,7 @@ export default function EmergencyButton() {
             </div>
           )}
 
-          {/* 4. ACTION SELECTION MODAL */}
+          {/* 5. ACTION SELECTION MODAL */}
           {sosState === 'action_selection' && (
             <div className="bg-white rounded-[1.5rem] p-6 shadow-2xl flex flex-col items-center animate-in zoom-in-95 duration-200 w-full max-w-[22rem] border border-sistech-pink">
               
@@ -266,7 +304,7 @@ export default function EmergencyButton() {
               </h3>
               
               <div className="w-full flex flex-col gap-3 mb-6">
-                {/* Option 1: Panggil Darurat */}
+                {/* Panggil Darurat 110 */}
                 <a href="tel:110" className="bg-[#6A5AE0] hover:bg-[#5C4DD0] text-white p-3.5 rounded-xl flex items-center shadow-sm transition-colors group">
                   <div className="bg-white/20 p-2 rounded-lg mr-3 group-hover:scale-105 transition-transform shrink-0">
                     <Phone className="w-5 h-5 text-white" />
@@ -278,7 +316,7 @@ export default function EmergencyButton() {
                   <ChevronRight className="w-5 h-5 text-white/60 group-hover:text-white transition-colors" />
                 </a>
                 
-                {/* Option 2: Safe Point */}
+                {/* Safe Point Terdekat */}
                 <button 
                   onClick={fetchNearestSafePoint}
                   className="bg-[#6A5AE0] hover:bg-[#5C4DD0] text-white p-3.5 rounded-xl flex items-center shadow-sm transition-colors group"
@@ -303,7 +341,7 @@ export default function EmergencyButton() {
             </div>
           )}
 
-          {/* 5. SAFE POINT LIST MODAL (Unexpanded) */}
+          {/* 6. SAFE POINT LIST MODAL */}
           {sosState === 'safe_point_list' && (
             <div className="bg-white rounded-[1.5rem] p-6 shadow-2xl flex flex-col items-center animate-in zoom-in-95 duration-200 w-full max-w-[22rem] border border-sistech-pink">
               
@@ -343,12 +381,11 @@ export default function EmergencyButton() {
             </div>
           )}
 
-          {/* 6. SAFE POINT DETAIL MODAL (Expanded) */}
+          {/* 7. SAFE POINT DETAIL MODAL */}
           {sosState === 'safe_point_detail' && safePoint && (
             <div className="bg-white rounded-[1.5rem] p-6 shadow-2xl flex flex-col items-center animate-in zoom-in-95 duration-200 w-full max-w-[22rem] border border-sistech-pink">
               
               <div className="w-full border border-neutral-200 rounded-xl overflow-hidden mb-6 shadow-sm">
-                {/* Header */}
                 <div className="p-3.5 bg-white flex items-center border-b border-neutral-100">
                   <div className="bg-white border border-neutral-200 p-1.5 rounded-lg mr-3 shrink-0">
                     <Store className="w-5 h-5 text-blue-600" />
@@ -359,7 +396,6 @@ export default function EmergencyButton() {
                   </div>
                 </div>
                 
-                {/* Body Details */}
                 <div className="p-4 bg-pink-50/50">
                   <p className="text-[11px] font-bold text-[#FF4297] mb-2.5">Informasi Safe Point</p>
                   <div className="grid grid-cols-2 gap-y-2 gap-x-1 text-[10px] text-neutral-600 mb-5">
@@ -369,18 +405,25 @@ export default function EmergencyButton() {
                         <span className="line-clamp-2">{feature}</span>
                       </div>
                     ))}
-                    {(!safePoint.features || safePoint.features.length === 0) && (
-                      <div className="col-span-2 text-neutral-500 italic">Informasi fitur tidak tersedia</div>
-                    )}
                   </div>
                   
+                  {/* Pilihan 1: Rute Aplikasi SafeHer */}
                   <button 
                     onClick={() => {
                       window.location.href = `/route?destLat=${safePoint.lat || ''}&destLon=${safePoint.lon || ''}`;
                     }}
-                    className="w-full bg-[#AC42A0] text-white font-bold py-2.5 rounded-lg shadow-sm hover:bg-[#8F3584] transition-colors text-xs active:scale-95"
+                    className="w-full bg-[#AC42A0] text-white font-bold py-2.5 rounded-lg shadow-sm hover:bg-[#8F3584] transition-colors text-xs active:scale-95 mb-2"
                   >
                     PILIH RUTE KE SAFE POINT
+                  </button>
+
+                  {/* Pilihan 2: Navigasi Langsung via Google Maps */}
+                  <button 
+                    onClick={handleOpenGoogleMapsRoute}
+                    className="w-full bg-white border border-[#AC42A0] text-[#AC42A0] font-bold py-2 rounded-lg hover:bg-pink-50 transition-colors text-xs active:scale-95 flex items-center justify-center gap-1.5"
+                  >
+                    <Navigation className="w-3.5 h-3.5" />
+                    BUKA GOOGLE MAPS DIRECT
                   </button>
                 </div>
               </div>

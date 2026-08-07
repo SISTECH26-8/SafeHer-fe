@@ -43,7 +43,7 @@ export default function LoginPage() {
         {/* Logo PNG */}
         <div className="relative w-48 h-48 mb-4">
           <Image
-            src="/SafeHer.png?v=2" 
+            src="/SafeHer.png" 
             alt="SafeHer Logo"
             fill
             className="object-contain"

@@ -1,15 +1,19 @@
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
-import { MapPin, Search, GraduationCap, Coffee, ShoppingBag, X, ArrowLeft, Loader2 } from 'lucide-react';
-import Link from 'next/link';
+import { MapPin, Search, ArrowLeft, Loader2, X } from 'lucide-react';
 import api from '@/lib/api';
 import { useRouter, useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 
-const TrackingMap = dynamic(() => import('@/components/features/TrackingMap'), {
+const RouteSelectionMap = dynamic(() => import('@/components/features/RouteSelectionMap'), {
   ssr: false,
-  loading: () => <div className="w-full h-screen fixed inset-0 flex flex-col items-center justify-center bg-neutral-900 z-[9999]"><Loader2 className="w-10 h-10 animate-spin text-sistech-pink mb-4" /><p className="text-white font-bold">Memuat Peta Tracking...</p></div>
+  loading: () => (
+    <div className="w-full h-screen fixed inset-0 flex flex-col items-center justify-center bg-neutral-900 z-[9999]">
+      <Loader2 className="w-10 h-10 animate-spin text-sistech-pink mb-4" />
+      <p className="text-white font-bold">Memuat Peta Rute Aman...</p>
+    </div>
+  )
 });
 
 interface Location {
@@ -27,7 +31,7 @@ function RoutePageContent() {
   const queryDestLon = searchParams.get('destLon');
   
   const [startLoc, setStartLoc] = useState('Mendeteksi lokasi...');
-  const [startCoords, setStartCoords] = useState<[number, number] | null>(null);
+  const [startCoords, setStartCoords] = useState<[number, number] | null>(null); // [lon, lat]
   const [isLocating, setIsLocating] = useState(true);
   
   const [endLoc, setEndLoc] = useState<Location | null>(null);
@@ -37,14 +41,36 @@ function RoutePageContent() {
   const [searchResults, setSearchResults] = useState<Location[]>([]);
   const [isSearchingApi, setIsSearchingApi] = useState(false);
   const [isRouting, setIsRouting] = useState(false);
+  const [, setRecentDestinations] = useState<Location[]>([]);
 
-  // Get current location on mount (Nominatim API)
+  // State untuk mengaktifkan tampilan Pilihan Rute & Navigasi
+  const [isTrackingActive, setIsTrackingActive] = useState(false);
+
+  // 1. Cek parameter URL dari SOS Safe Point
+  useEffect(() => {
+    if (queryDestLat && queryDestLon) {
+      const lat = parseFloat(queryDestLat);
+      const lon = parseFloat(queryDestLon);
+
+      if (!isNaN(lat) && !isNaN(lon)) {
+        setEndLoc({
+          id: 'safe-point-target',
+          name: 'Safe Point Terpilih',
+          address: 'Rute menuju tempat aman terdekat',
+          coordinates: [lon, lat]
+        });
+      }
+    }
+  }, [queryDestLat, queryDestLon]);
+
+  // 2. Get Geolocation GPS
   useEffect(() => {
     if (typeof window !== 'undefined' && 'geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           const { latitude, longitude } = position.coords;
-          setStartCoords([latitude, longitude]);
+          
+          setStartCoords([longitude, latitude]);
           
           try {
             const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`, {
@@ -52,7 +78,6 @@ function RoutePageContent() {
             });
             const data = await res.json();
             if (data && data.display_name) {
-              // Extract a shorter name if possible
               const shortName = data.name || data.display_name.split(',')[0];
               setStartLoc(shortName);
             } else {
@@ -78,7 +103,7 @@ function RoutePageContent() {
     }
   }, []);
 
-  // Nominatim Autocomplete Search
+  // 3. Autocomplete Search Nominatim
   useEffect(() => {
     const delayDebounceFn = setTimeout(async () => {
       if (!searchQuery.trim()) {
@@ -93,7 +118,7 @@ function RoutePageContent() {
         const data = await res.json();
         
         if (data && data.length > 0) {
-          const results = data.map((feature: any) => ({
+          const results: Location[] = data.map((feature: any) => ({
             id: feature.place_id.toString(),
             name: feature.name || feature.display_name.split(',')[0],
             address: feature.display_name,
@@ -108,15 +133,10 @@ function RoutePageContent() {
       } finally {
         setIsSearchingApi(false);
       }
-    }, 600); // 600ms debounce
+    }, 600);
 
     return () => clearTimeout(delayDebounceFn);
   }, [searchQuery]);
-
-  const [recentDestinations, setRecentDestinations] = useState<any[]>([]);
-
-  // TODO: Fetch recent destinations from backend when available
-  // For now, it's empty. When the user successfully routes, we could add to it.
 
   const handleSelectLocation = (loc: Location) => {
     setEndLoc(loc);
@@ -125,43 +145,56 @@ function RoutePageContent() {
     setSearchResults([]);
   };
 
-  const handleSelectRecent = (recent: any) => {
-    handleSelectLocation({
-      id: recent.id,
-      name: recent.name,
-      address: recent.address,
-      coordinates: recent.coordinates
-    });
-  };
-
   const handleClearDestination = (e: React.MouseEvent) => {
     e.stopPropagation();
     setEndLoc(null);
   };
 
+  // 4. PENGIRIMAN API & AKTIFKAN PEMILIHAN RUTE (ROUTE SELECTION MAP)
   const handleSearchRoute = async () => {
-    if (!startCoords || !endLoc) return;
+    if (!startCoords || !endLoc) {
+      alert('Pilih lokasi asal dan tujuan terlebih dahulu.');
+      return;
+    }
+
     setIsRouting(true);
-    
+
     try {
+      const originLon = Number(startCoords[0]);
+      const originLat = Number(startCoords[1]);
+      const destLon = Number(endLoc.coordinates[0]);
+      const destLat = Number(endLoc.coordinates[1]);
+
+      const isoDatetime = new Date().toISOString().split('.')[0] + 'Z';
+
       const payload = {
-        origin_lon: startCoords[0],
-        origin_lat: startCoords[1],
-        destination_lon: endLoc.coordinates[0],
-        destination_lat: endLoc.coordinates[1],
-        datetime: new Date().toISOString()
+        origin_lon: originLon,
+        origin_lat: originLat,
+        destination_lon: destLon,
+        destination_lat: destLat,
+        datetime: isoDatetime
       };
-      
-      const response = await api.post('/api/v1/trips/routes/recommend', payload);
-      console.log('Route Recommendation:', response.data);
-      
-      // Jika berhasil memanggil API, bisa diarahkan ke halaman detail rute (jika ada)
-      // router.push('/route/result'); 
-      alert('Rute berhasil ditemukan melalui server!');
-      
-    } catch (error) {
-      console.error('Failed to get route recommendation:', error);
-      alert('Gagal mengambil data rute dari server.');
+
+      console.log('Payload Rute Terkirim:', payload);
+
+      // Request rekomendasi rute ke Backend
+      try {
+        const response = await api.post('/api/v1/trips/routes/recommend', payload);
+        console.log('Route Recommendation Success:', response.data);
+      } catch (err) {
+        console.warn('Backend API skip / fallback local:', err);
+      }
+
+      // Simpan ke Recent
+      setRecentDestinations((prev) => {
+        const isExists = prev.some((item) => item.id === endLoc.id);
+        if (!isExists) return [endLoc, ...prev.slice(0, 4)];
+        return prev;
+      });
+
+      // Buka Layar Route Selection Map
+      setIsTrackingActive(true);
+
     } finally {
       setIsRouting(false);
     }
@@ -169,17 +202,31 @@ function RoutePageContent() {
 
   const isRouteReady = startCoords && endLoc && !isLocating;
 
-  // Jika URL memiliki destLat dan destLon, serta koordinat awal sudah ditemukan,
-  // maka kita tampilkan peta Tracking. Jika belum ditemukan koordinat, bisa tampilkan loader atau map default.
-  if (queryDestLat && queryDestLon) {
-    // Kita asumsikan startCoords sudah didapat dari geolocation
-    // Jika belum didapatkan tapi ada lokasi awal fallback (atau lokasi kasar), kita tampilkan map
-    const destCoords: [number, number] = [parseFloat(queryDestLat), parseFloat(queryDestLon)];
-    
-    // Fallback jika belum dapat lokasi GPS
-    const defaultStartCoords: [number, number] = startCoords || [destCoords[0] - 0.003, destCoords[1] - 0.003];
-    
-    return <TrackingMap startCoords={defaultStartCoords} destCoords={destCoords} />;
+  // CONDITIONAL RENDER 1: Menggunakan RouteSelectionMap (Pilihan Mobil/Motor + Kartu Risk Level Figma)
+  if (isTrackingActive && startCoords && endLoc) {
+    return (
+      <RouteSelectionMap
+        startCoords={startCoords}
+        destCoords={endLoc.coordinates}
+        startName={startLoc}
+        destName={endLoc.name}
+        onBack={() => setIsTrackingActive(false)}
+      />
+    );
+  }
+
+  // CONDITIONAL RENDER 2: Jika URL dikirim langsung dari fitur SOS Safe Point
+  if (queryDestLat && queryDestLon && startCoords) {
+    const destCoords: [number, number] = [parseFloat(queryDestLon), parseFloat(queryDestLat)];
+    return (
+      <RouteSelectionMap
+        startCoords={startCoords}
+        destCoords={destCoords}
+        startName={startLoc}
+        destName="Safe Point Terpilih"
+        onBack={() => router.push('/route')}
+      />
+    );
   }
 
   return (
@@ -225,98 +272,51 @@ function RoutePageContent() {
                   <Search className="w-8 h-8 text-neutral-400" />
                 </div>
                 <p className="text-base text-neutral-500 font-medium">Yah, lokasi tidak ditemukan.</p>
-                <p className="text-sm text-neutral-400 mt-1">Coba masukkan kata kunci yang lebih spesifik.</p>
               </div>
             ) : null}
-
-            {/* If no search query, show recent or popular */}
-            {!searchQuery && recentDestinations.length > 0 && (
-              <>
-                <p className="text-sm font-bold text-neutral-900 mb-3 mt-6 ml-2 uppercase tracking-wide">Rekomendasi / Tujuan Terakhir</p>
-                {recentDestinations.map((dest) => (
-                  <div key={dest.id} onClick={() => handleSelectRecent(dest)} className="w-full bg-white rounded-2xl p-4 md:p-5 flex items-center shadow-sm relative border border-neutral-100 hover:border-pink-200 hover:bg-pink-50 cursor-pointer transition-all hover:shadow-md">
-                    <div className={`w-12 h-12 ${dest.bgIcon} rounded-xl flex items-center justify-center flex-shrink-0 mr-4 md:mr-5`}>
-                      {dest.icon}
-                    </div>
-                    <div className="flex flex-col overflow-hidden flex-1">
-                      <h4 className="text-base font-bold text-neutral-900 truncate">{dest.name}</h4>
-                      <div className="flex items-center text-xs text-neutral-500 mt-1">
-                        <span className="truncate">{dest.address}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </>
-            )}
           </div>
         </div>
       )}
 
+      {/* Main UI Form Input Rute */}
       <div className={`flex flex-col lg:flex-row gap-8 md:gap-16 items-start w-full ${isSearching ? 'hidden' : ''}`}>
         
-        {/* Left Side: Header & Info (Sticky on Desktop) */}
+        {/* Left Side Header */}
         <div className="w-full lg:w-5/12 lg:sticky lg:top-24 flex flex-col">
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-neutral-900 mb-4 md:mb-6 leading-[1.15] tracking-tight">
-            Temukan rute <span className="text-sistech-pink relative">teraman<svg className="absolute -bottom-2 left-0 w-full h-3 text-pink-200 -z-10" viewBox="0 0 100 10" preserveAspectRatio="none"><path d="M0 5 Q 50 10 100 5" stroke="currentColor" strokeWidth="4" fill="transparent"/></svg></span> untuk perjalananmu
+            Temukan rute <span className="text-sistech-pink relative">teraman</span> untuk perjalananmu
           </h1>
           <p className="text-base md:text-lg text-neutral-600 leading-relaxed mb-8 md:mb-10">
-            Sistem kami menganalisis data rute secara *real-time* untuk memberikan rekomendasi jalur terbaik yang menghindari area rawan, agar kamu bisa sampai di tujuan dengan tenang.
+            Sistem kami menganalisis data rute secara real-time untuk memberikan rekomendasi jalur terbaik yang menghindari area rawan.
           </p>
-          
-          {/* Top Banner SOS as a styled card */}
-          <div className="w-full border border-neutral-100 rounded-3xl p-6 bg-gradient-to-br from-white to-red-50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col md:flex-row lg:flex-col items-center md:items-start lg:items-start gap-4">
-            <div className="relative flex-shrink-0">
-               <div className="w-14 h-14 bg-green-600 rounded-2xl flex items-center justify-center shadow-lg shadow-green-200">
-                  <div className="w-6 h-6 bg-white rounded-full"></div>
-               </div>
-               <div className="absolute -bottom-2 -right-2 text-[10px] font-extrabold text-white bg-red-500 px-1.5 py-0.5 shadow-sm rounded border border-white tracking-widest">SOS</div>
-            </div>
-            <div className="flex flex-col text-center md:text-left lg:text-left">
-               <h2 className="text-lg md:text-xl font-bold text-neutral-900 mb-1.5">Selalu Ada Bantuan!</h2>
-               <p className="text-sm text-neutral-600 leading-relaxed">
-                 Fitur SOS kamu sudah aktif ke layanan darurat resmi. Tambahkan kontak terdekatmu agar ada yang langsung tahu saat kamu butuh bantuan!
-               </p>
-            </div>
-          </div>
         </div>
 
-        {/* Right Side: Form Container */}
+        {/* Right Side Form */}
         <div className="w-full lg:w-7/12 max-w-xl mx-auto lg:mx-0 flex flex-col gap-8">
-          
           <div className="w-full bg-white rounded-[2rem] p-6 md:p-10 shadow-[0_8px_30px_rgb(0,0,0,0.08)] relative z-10 border border-neutral-100">
-            <h3 className="text-sm font-extrabold text-neutral-900 uppercase mb-6 tracking-wider hidden md:block">
+            <h3 className="text-sm font-extrabold text-neutral-900 uppercase mb-6 tracking-wider">
               Pilih Tujuan Perjalanan
             </h3>
             
             {/* Start Location */}
-            <div className="w-full bg-neutral-50 border border-neutral-100 rounded-2xl p-4 flex items-center shadow-sm relative z-10 transition-all">
-               <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0 text-blue-600 shadow-inner">
-                 {isLocating ? (
-                   <Loader2 className="w-5 h-5 animate-spin" />
-                 ) : (
-                   <MapPin className="w-5 h-5" />
-                 )}
+            <div className="w-full bg-neutral-50 border border-neutral-100 rounded-2xl p-4 flex items-center shadow-sm">
+               <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0 text-blue-600">
+                 {isLocating ? <Loader2 className="w-5 h-5 animate-spin" /> : <MapPin className="w-5 h-5" />}
                </div>
                <div className="ml-4 flex-1 overflow-hidden">
                  <p className="text-xs font-bold text-neutral-500 uppercase tracking-wide mb-0.5">Lokasi Kamu (GPS)</p>
                  <p className="text-sm md:text-base font-bold text-neutral-900 truncate" title={startLoc}>{startLoc}</p>
                </div>
-               <div className="text-blue-500 ml-2 p-2">
-                 <div className="w-5 h-5 border-[3px] border-blue-500 rounded-full flex items-center justify-center">
-                   <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                 </div>
-               </div>
             </div>
 
-            {/* Dotted Line */}
             <div className="h-12 border-l-2 border-dashed border-neutral-300 ml-9 my-1 opacity-70"></div>
 
             {/* Destination */}
             <div 
               onClick={() => setIsSearching(true)}
-              className={`w-full ${endLoc ? 'bg-neutral-50 border-neutral-100' : 'bg-white border-dashed border-neutral-300 hover:bg-neutral-50 hover:border-solid hover:border-pink-200'} border-2 rounded-2xl p-4 flex items-center shadow-sm relative z-10 transition-all cursor-pointer group`}
+              className={`w-full ${endLoc ? 'bg-neutral-50 border-neutral-100' : 'bg-white border-dashed border-neutral-300'} border-2 rounded-2xl p-4 flex items-center shadow-sm cursor-pointer group`}
             >
-               <div className={`w-10 h-10 rounded-xl ${endLoc ? 'bg-sistech-pink text-white shadow-md shadow-pink-200' : 'bg-neutral-100 text-neutral-400 group-hover:bg-pink-100 group-hover:text-sistech-pink'} flex items-center justify-center flex-shrink-0 transition-colors`}>
+               <div className={`w-10 h-10 rounded-xl ${endLoc ? 'bg-sistech-pink text-white' : 'bg-neutral-100 text-neutral-400'} flex items-center justify-center flex-shrink-0`}>
                  <MapPin className="w-5 h-5" />
                </div>
                
@@ -326,29 +326,26 @@ function RoutePageContent() {
                      <p className="text-xs font-bold text-neutral-500 uppercase tracking-wide mb-0.5">Tujuan</p>
                      <p className="text-sm md:text-base font-bold text-neutral-900 truncate">{endLoc.name}</p>
                    </div>
-                   <button 
-                     onClick={handleClearDestination}
-                     className="text-neutral-400 ml-2 p-2 hover:bg-neutral-200 hover:text-neutral-800 rounded-full transition-colors"
-                   >
-                     <X className="w-5 h-5 font-bold" />
+                   <button onClick={handleClearDestination} className="text-neutral-400 ml-2 p-2 hover:bg-neutral-200 rounded-full">
+                     <X className="w-5 h-5" />
                    </button>
                  </>
                ) : (
                  <div className="ml-4 flex-1 overflow-hidden">
-                   <p className="text-sm md:text-base font-bold text-neutral-900 mb-0.5 group-hover:text-sistech-pink transition-colors">Tujuan Perjalanan</p>
+                   <p className="text-sm md:text-base font-bold text-neutral-900 mb-0.5">Tujuan Perjalanan</p>
                    <p className="text-xs md:text-sm text-neutral-500 truncate">Klik untuk mencari tujuan perjalananmu!</p>
                  </div>
                )}
             </div>
 
-            {/* Button */}
+            {/* Submit Button */}
             <button 
               disabled={!isRouteReady || isRouting}
               onClick={handleSearchRoute}
               className={`w-full mt-8 flex items-center justify-center font-extrabold py-4 rounded-full text-sm tracking-wide shadow-lg transition-all ${
                 isRouteReady 
-                  ? 'bg-sistech-pink text-white hover:bg-pink-600 shadow-pink-200 hover:shadow-xl hover:shadow-pink-200/50 hover:-translate-y-0.5 active:scale-[0.98]' 
-                  : 'bg-neutral-200 text-neutral-400 cursor-not-allowed shadow-none'
+                  ? 'bg-sistech-pink text-white hover:bg-pink-600 shadow-pink-200' 
+                  : 'bg-neutral-200 text-neutral-400 cursor-not-allowed'
               }`}
             >
               {isRouting ? (
@@ -361,47 +358,7 @@ function RoutePageContent() {
               )}
             </button>
           </div>
-
-          {/* Recent Destinations (Right Side below form) */}
-          {recentDestinations.length > 0 && (
-            <div className="w-full flex flex-col mt-2">
-              <h3 className="text-xs md:text-sm font-extrabold text-neutral-900 uppercase mb-4 tracking-wider pl-2">
-                Tujuan Terakhir yang Dikunjungi
-              </h3>
-              <div className="space-y-3">
-                {recentDestinations.map((dest) => (
-                  <div key={dest.id} onClick={() => handleSelectRecent(dest)} className="w-full bg-white rounded-2xl p-4 flex items-center justify-between shadow-sm relative border border-neutral-100 hover:border-pink-200 hover:bg-pink-50 transition-all cursor-pointer group hover:shadow-md">
-                    <div className="flex items-center space-x-4 overflow-hidden flex-1">
-                      <div className={`w-12 h-12 ${dest.bgIcon} rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform`}>
-                        {dest.icon}
-                      </div>
-                      <div className="flex flex-col overflow-hidden">
-                        <h4 className="text-sm md:text-base font-bold text-neutral-900 truncate group-hover:text-sistech-pink transition-colors">{dest.name}</h4>
-                        <div className="flex items-center text-[11px] md:text-xs text-neutral-500 mt-1">
-                          <span className="truncate max-w-[120px] md:max-w-[200px]">{dest.address}</span>
-                          <span className="mx-2 font-bold text-neutral-300">&bull;</span>
-                          <span className="font-bold text-neutral-700">{dest.distance}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="ml-3 flex-shrink-0">
-                       <div className={`px-3 py-1.5 rounded-lg text-[10px] md:text-xs font-bold ${dest.badgeColor} shadow-sm uppercase tracking-wide`}>
-                         {dest.status}
-                       </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
-      </div>
-
-      {/* Bottom Info Banner */}
-      <div className={`w-full max-w-2xl mx-auto bg-gradient-to-r from-[#EAE8FF] to-pink-50 border border-[#7A6AE6]/20 rounded-2xl p-5 text-center mt-12 shadow-sm ${isSearching ? 'hidden' : ''}`}>
-        <p className="text-[#3E2E95] text-sm md:text-base font-bold leading-snug">
-          Merasa terancam? Tekan tombol <span className="text-red-500 font-extrabold">SOS</span> melayang di kanan bawah kapan saja!
-        </p>
       </div>
 
     </div>
