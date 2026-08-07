@@ -4,14 +4,20 @@ import React from 'react';
 import { MapPin, Phone, Lock, Heart, Star, Send } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { motion } from 'framer-motion';
 
 export default function Home() {
   return (
     <div className="w-full flex flex-col items-center animate-in fade-in slide-in-from-bottom-4 duration-700 bg-white">
       
       {/* 1. Hero Section */}
-      <section className="w-full max-w-6xl mx-auto px-4 py-8 md:py-20 flex flex-col md:flex-row items-center gap-6 md:gap-16">
-        <div className="w-full md:w-1/2 flex flex-col items-center md:items-start text-center md:text-left order-2 md:order-1">
+      <section className="w-full max-w-6xl mx-auto px-4 py-8 md:py-20 flex flex-col md:flex-row items-center gap-6 md:gap-16 overflow-hidden">
+        <motion.div 
+          initial={{ opacity: 0, x: -50 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="w-full md:w-1/2 flex flex-col items-center md:items-start text-center md:text-left order-2 md:order-1"
+        >
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-neutral-900 tracking-tight leading-tight mb-4">
             Bisa kemana aja <br />
             tanpa takut <br />
@@ -23,14 +29,19 @@ export default function Home() {
           <button className="px-6 py-3 md:px-8 md:py-3.5 bg-sistech-pink text-white font-bold rounded-xl shadow-lg shadow-sistech-pink/30 hover:bg-sistech-pink/90 hover:scale-105 transition-all text-sm">
             Lihat Selengkapnya
           </button>
-        </div>
-        <div className="w-full md:w-1/2 relative h-[250px] sm:h-[300px] md:h-[450px] rounded-2xl md:rounded-3xl overflow-hidden shadow-lg md:shadow-2xl order-1 md:order-2">
+        </motion.div>
+        <motion.div 
+          initial={{ opacity: 0, x: 50 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
+          className="w-full md:w-1/2 relative h-[250px] sm:h-[300px] md:h-[450px] rounded-2xl md:rounded-3xl overflow-hidden shadow-lg md:shadow-2xl order-1 md:order-2"
+        >
           <img 
             src="/forest-path.jpg" 
             alt="Forest Path" 
-            className="object-cover w-full h-full"
+            className="object-cover w-full h-full hover:scale-110 transition-transform duration-700"
           />
-        </div>
+        </motion.div>
       </section>
 
       {/* 2. Stats Section */}
@@ -52,13 +63,25 @@ export default function Home() {
       </section>
 
       {/* 3. About Section */}
-      <section className="w-full max-w-5xl mx-auto px-4 py-8 md:py-12 flex flex-col md:flex-row items-center justify-center gap-8 md:gap-12 mb-8 md:mb-12">
-        <div className="w-full md:w-1/2 flex justify-center">
+      <section className="w-full max-w-5xl mx-auto px-4 py-8 md:py-12 flex flex-col md:flex-row items-center justify-center gap-8 md:gap-12 mb-8 md:mb-12 overflow-hidden">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.8 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="w-full md:w-1/2 flex justify-center"
+        >
           <div className="relative w-48 h-48 md:w-80 md:h-80">
-            <img src="/SafeHer.png" alt="SafeHer Icon" className="w-full h-full object-contain" />
+            <img src="/SafeHer.png" alt="SafeHer Icon" className="w-full h-full object-contain drop-shadow-xl animate-[pulse_4s_ease-in-out_infinite]" />
           </div>
-        </div>
-        <div className="w-full md:w-1/2 flex flex-col items-center md:items-start text-center md:text-left relative">
+        </motion.div>
+        <motion.div 
+          initial={{ opacity: 0, y: 50 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="w-full md:w-1/2 flex flex-col items-center md:items-start text-center md:text-left relative"
+        >
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-sistech-pink mb-4 leading-tight">
             Platform keselamatan<br />wanita terbaik di<br />Jabodetabek
           </h2>
@@ -66,11 +89,11 @@ export default function Home() {
             <span className="text-sistech-pink font-bold">SafeHer</span> hadir sebagai website keselamatan wanita yang dapat memberikan hak berupa kenyamanan dan keamanan pada wanita.
           </p>
           <div className="mt-2 md:mt-4">
-            <button className="px-8 py-3 md:px-10 md:py-4 bg-red-600 text-white text-xl md:text-2xl font-black rounded-xl shadow-lg border-b-4 border-red-800 hover:scale-105 transition-transform tracking-widest">
+            <button className="px-8 py-3 md:px-10 md:py-4 bg-red-600 text-white text-xl md:text-2xl font-black rounded-xl shadow-lg border-b-4 border-red-800 hover:scale-105 transition-transform tracking-widest animate-[pulse_2s_infinite]">
               SOS
             </button>
           </div>
-        </div>
+        </motion.div>
       </section>
 
       {/* 4. Services Section */}
@@ -79,38 +102,62 @@ export default function Home() {
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 w-full">
           
-          <Link href="/route" className="flex flex-col items-center group cursor-pointer w-full">
-            <div className="w-full h-48 md:h-64 bg-green-100 rounded-3xl overflow-hidden mb-4 shadow-md group-hover:-translate-y-2 transition-transform relative">
-              <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&q=80&w=400" alt="Map" className="object-cover w-full h-full opacity-60 mix-blend-multiply" />
-            </div>
-            <h3 className="text-lg md:text-xl font-bold text-neutral-900">Rute Aman</h3>
-          </Link>
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="w-full"
+          >
+            <Link href="/route" className="flex flex-col items-center group cursor-pointer w-full">
+              <div className="w-full h-48 md:h-64 bg-green-100 rounded-3xl overflow-hidden mb-4 shadow-md group-hover:-translate-y-2 group-hover:shadow-xl transition-all duration-300 relative">
+                <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&q=80&w=400" alt="Map" className="object-cover w-full h-full opacity-60 mix-blend-multiply group-hover:scale-110 transition-transform duration-700" />
+              </div>
+              <h3 className="text-lg md:text-xl font-bold text-neutral-900 group-hover:text-sistech-pink transition-colors">Rute Aman</h3>
+            </Link>
+          </motion.div>
 
-          <Link href="/report" className="flex flex-col items-center group cursor-pointer w-full">
-            <div className="w-full h-48 md:h-64 bg-neutral-100 border border-neutral-200 rounded-3xl overflow-hidden mb-4 shadow-md group-hover:-translate-y-2 transition-transform p-4 relative flex flex-col items-center justify-center">
-               <div className="w-10/12 md:w-11/12 h-5/6 bg-white rounded-2xl shadow-sm border border-neutral-200 flex flex-col items-center p-3 relative">
-                 <div className="w-full h-3 md:h-4 bg-neutral-100 rounded-full mb-2"></div>
-                 <div className="w-3/4 h-3 md:h-4 bg-neutral-100 rounded-full mb-4"></div>
-                 <div className="w-full h-6 md:h-8 bg-neutral-50 rounded border border-neutral-200 mb-2"></div>
-                 <div className="w-full h-12 md:h-16 bg-neutral-50 rounded border border-neutral-200 mb-2"></div>
-                 <div className="w-1/2 h-4 md:h-6 bg-red-500 rounded mt-auto"></div>
-               </div>
-            </div>
-            <h3 className="text-lg md:text-xl font-bold text-neutral-900">Lapor Anonim</h3>
-          </Link>
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="w-full"
+          >
+            <Link href="/report" className="flex flex-col items-center group cursor-pointer w-full">
+              <div className="w-full h-48 md:h-64 bg-neutral-100 border border-neutral-200 rounded-3xl overflow-hidden mb-4 shadow-md group-hover:-translate-y-2 group-hover:shadow-xl transition-all duration-300 p-4 relative flex flex-col items-center justify-center">
+                 <div className="w-10/12 md:w-11/12 h-5/6 bg-white rounded-2xl shadow-sm border border-neutral-200 flex flex-col items-center p-3 relative group-hover:scale-105 transition-transform duration-500">
+                   <div className="w-full h-3 md:h-4 bg-neutral-100 rounded-full mb-2"></div>
+                   <div className="w-3/4 h-3 md:h-4 bg-neutral-100 rounded-full mb-4"></div>
+                   <div className="w-full h-6 md:h-8 bg-neutral-50 rounded border border-neutral-200 mb-2"></div>
+                   <div className="w-full h-12 md:h-16 bg-neutral-50 rounded border border-neutral-200 mb-2"></div>
+                   <div className="w-1/2 h-4 md:h-6 bg-red-500 rounded mt-auto group-hover:bg-red-600 transition-colors"></div>
+                 </div>
+              </div>
+              <h3 className="text-lg md:text-xl font-bold text-neutral-900 group-hover:text-sistech-pink transition-colors">Lapor Anonim</h3>
+            </Link>
+          </motion.div>
 
-          <div className="flex flex-col items-center group cursor-pointer w-full">
-            <div className="w-full h-48 md:h-64 bg-red-50 rounded-3xl overflow-hidden mb-4 shadow-md group-hover:-translate-y-2 transition-transform border border-red-100 flex flex-col items-center justify-center">
-              <div className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-red-500 flex items-center justify-center bg-white shadow-inner">
-                <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-red-50 flex items-center justify-center">
-                  <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-red-600 text-white flex items-center justify-center text-xl md:text-2xl font-black shadow-lg">
-                    SOS
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="w-full"
+          >
+            <div className="flex flex-col items-center group cursor-pointer w-full">
+              <div className="w-full h-48 md:h-64 bg-red-50 rounded-3xl overflow-hidden mb-4 shadow-md group-hover:-translate-y-2 group-hover:shadow-xl transition-all duration-300 border border-red-100 flex flex-col items-center justify-center">
+                <div className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-red-500 flex items-center justify-center bg-white shadow-inner animate-[pulse_2s_ease-in-out_infinite] group-hover:scale-110 transition-transform">
+                  <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-red-50 flex items-center justify-center">
+                    <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-red-600 text-white flex items-center justify-center text-xl md:text-2xl font-black shadow-lg">
+                      SOS
+                    </div>
                   </div>
                 </div>
               </div>
+              <h3 className="text-lg md:text-xl font-bold text-neutral-900 group-hover:text-sistech-pink transition-colors">SOS</h3>
             </div>
-            <h3 className="text-lg md:text-xl font-bold text-neutral-900">SOS</h3>
-          </div>
+          </motion.div>
 
         </div>
       </section>
