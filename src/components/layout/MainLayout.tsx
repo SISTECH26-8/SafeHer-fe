@@ -103,7 +103,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
           {/* Brand & Description */}
           <div className="w-full md:w-1/3 max-w-xs">
             <div className="flex items-center space-x-2 mb-4">
-              <img src="/SafeHer.png" alt="SafeHer Logo" className="h-8 md:h-10 w-auto object-contain brightness-0 invert" />
+              <img src="/SafeHer.png" alt="SafeHer Logo" className="h-8 md:h-10 w-auto object-contain" />
             </div>
             <p className="text-xs md:text-sm text-white/90 leading-relaxed mb-4 md:mb-6">
               Jalan-jalan terasa aman selama ada SafeHer yang dapat memberikan layanan yang dapat diakses dengan lancar.
