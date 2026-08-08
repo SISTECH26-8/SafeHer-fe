@@ -342,7 +342,7 @@ export default function EmergencyButton() {
               <div className="w-full flex flex-col gap-3 mb-6">
                 {/* Hubungi via WhatsApp */}
                 <a 
-                  href={`https://wa.me/${emergencyContactPhone}?text=${encodeURIComponent(`[DARURAT] Tolong saya! Saya merasa tidak aman. Lokasi saya saat ini: https://www.google.com/maps?q=${userLocation?.lat},${userLocation?.lon}\n\nLacak lokasi saya: ${trackingUrl}`)}`} 
+                  href={`https://wa.me/${emergencyContactPhone}`} 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="bg-[#25D366] hover:bg-[#1DA851] text-white p-3.5 rounded-xl flex items-center shadow-sm transition-colors group"
@@ -351,8 +351,8 @@ export default function EmergencyButton() {
                     <Phone className="w-5 h-5 text-white" />
                   </div>
                   <div className="flex-1 text-left">
-                    <h4 className="font-bold text-sm">Kirim WhatsApp</h4>
-                    <p className="text-[11px] text-white/80 mt-0.5">Bagikan lokasi ke kontak WA</p>
+                    <h4 className="font-bold text-sm">Hubungi via WhatsApp</h4>
+                    <p className="text-[11px] text-white/80 mt-0.5">Chat kontak darurat Anda</p>
                   </div>
                   <ChevronRight className="w-5 h-5 text-white/60 group-hover:text-white transition-colors" />
                 </a>
