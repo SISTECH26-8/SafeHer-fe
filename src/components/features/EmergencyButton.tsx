@@ -25,6 +25,29 @@ export default function EmergencyButton() {
   const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
   const [safePoint, setSafePoint] = useState<any>(null);
   const [isFetchingSafePoint, setIsFetchingSafePoint] = useState(false);
+  const [emergencyContactPhone, setEmergencyContactPhone] = useState<string>('');
+
+  // Load emergency contact from localStorage
+  useEffect(() => {
+    const savedContacts = localStorage.getItem('emergency_contacts');
+    if (savedContacts) {
+      try {
+        const parsed = JSON.parse(savedContacts);
+        if (parsed && parsed.length > 0) {
+          let phone = parsed[0].phone;
+          // Clean up phone number for wa.me link (remove spaces, -, etc)
+          phone = phone.replace(/[^0-9+]/g, '');
+          phone = phone.replace('+', '');
+          if (phone.startsWith('0')) {
+            phone = '62' + phone.substring(1);
+          }
+          setEmergencyContactPhone(phone);
+        }
+      } catch (e) {
+        console.error('Failed to parse emergency contacts', e);
+      }
+    }
+  }, []);
 
   // Handle Countdown Timer
   useEffect(() => {
@@ -319,7 +342,7 @@ export default function EmergencyButton() {
               <div className="w-full flex flex-col gap-3 mb-6">
                 {/* Hubungi via WhatsApp */}
                 <a 
-                  href={`https://wa.me/?text=${encodeURIComponent(`[DARURAT] Tolong saya! Saya merasa tidak aman. Lokasi saya saat ini: https://www.google.com/maps?q=${userLocation?.lat},${userLocation?.lon}\n\nLacak lokasi saya: ${trackingUrl}`)}`} 
+                  href={`https://wa.me/${emergencyContactPhone}?text=${encodeURIComponent(`[DARURAT] Tolong saya! Saya merasa tidak aman. Lokasi saya saat ini: https://www.google.com/maps?q=${userLocation?.lat},${userLocation?.lon}\n\nLacak lokasi saya: ${trackingUrl}`)}`} 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="bg-[#25D366] hover:bg-[#1DA851] text-white p-3.5 rounded-xl flex items-center shadow-sm transition-colors group"

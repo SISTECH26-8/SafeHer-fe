@@ -19,11 +19,23 @@ export default function ProfilePage() {
   const [profileForm, setProfileForm] = useState({ name: '', email: '', phone: '' });
   const [contactForm, setContactForm] = useState({ name: '', phone: '' });
 
-  // Dummy contacts untuk demo
-  const [contacts, setContacts] = useState([
-    { id: 1, name: 'Ayah', phone: '+62 8123 4567 89', isDemo: true },
-    { id: 2, name: 'Bunda', phone: '+62 8123 4567 89', isDemo: true }
-  ]);
+  const [contacts, setContacts] = useState<any[]>([]);
+
+  useEffect(() => {
+    // Load contacts from localStorage on mount
+    const savedContacts = localStorage.getItem('emergency_contacts');
+    if (savedContacts) {
+      setContacts(JSON.parse(savedContacts));
+    } else {
+      // Default demo contacts
+      const demoContacts = [
+        { id: 1, name: 'Ayah', phone: '+62 8123 4567 89', isDemo: true },
+        { id: 2, name: 'Bunda', phone: '+62 8123 4567 89', isDemo: true }
+      ];
+      setContacts(demoContacts);
+      localStorage.setItem('emergency_contacts', JSON.stringify(demoContacts));
+    }
+  }, []);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -73,22 +85,26 @@ export default function ProfilePage() {
         phone: contactForm.phone,
         isDemo: false
       };
-      setContacts([...contacts, newContact]);
+      const newContacts = [...contacts, newContact];
+      setContacts(newContacts);
+      localStorage.setItem('emergency_contacts', JSON.stringify(newContacts));
     } else {
-      setContacts(
-        contacts.map((c) =>
+      const updatedContacts = contacts.map((c) =>
           c.id === editingContactId
             ? { ...c, name: contactForm.name, phone: contactForm.phone, isDemo: false }
             : c
-        )
-      );
+        );
+      setContacts(updatedContacts);
+      localStorage.setItem('emergency_contacts', JSON.stringify(updatedContacts));
     }
     setIsContactModalOpen(false);
   };
 
   const handleDeleteContact = (id: number) => {
     if (confirm('Apakah Anda yakin ingin menghapus kontak ini?')) {
-      setContacts(contacts.filter((c) => c.id !== id));
+      const newContacts = contacts.filter((c) => c.id !== id);
+      setContacts(newContacts);
+      localStorage.setItem('emergency_contacts', JSON.stringify(newContacts));
     }
   };
 
